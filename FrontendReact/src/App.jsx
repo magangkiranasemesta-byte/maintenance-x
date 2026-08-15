@@ -1,6 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+    BrowserRouter,
+    Routes,
+    Route,
+    Outlet
+} from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -9,26 +15,92 @@ import Maintenance from "./pages/Maintenance";
 import Approval from "./pages/Approval";
 import History from "./pages/History";
 
-function App() {
+
+// =========================
+// LAYOUT SETELAH LOGIN
+// =========================
+
+function MainLayout() {
+
     return (
+        <div className="app-layout">
+
+            <Sidebar />
+
+            <main className="main-content">
+                <Outlet />
+            </main>
+
+        </div>
+    );
+}
+
+
+// =========================
+// APP
+// =========================
+
+function App() {
+
+    return (
+
         <BrowserRouter>
-            <div className="app-layout">
 
-                <Sidebar />
+            <Routes>
 
-                <main className="main-content">
-                    <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/equipment" element={<Equipment />} />
-                        <Route path="/maintenance" element={<Maintenance />} />
-                        <Route path="/approval" element={<Approval />} />
-                        <Route path="/history" element={<History />} />
-                    </Routes>
-                </main>
+                {/* =====================
+                    LOGIN
+                ===================== */}
 
-            </div>
+                <Route
+                    path="/login"
+                    element={<Login />}
+                />
+
+
+                {/* =====================
+                    HALAMAN YANG DILINDUNGI
+                ===================== */}
+
+                <Route
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout />
+                        </ProtectedRoute>
+                    }
+                >
+
+                    <Route
+                        path="/"
+                        element={<Dashboard />}
+                    />
+
+                    <Route
+                        path="/equipment"
+                        element={<Equipment />}
+                    />
+
+                    <Route
+                        path="/maintenance"
+                        element={<Maintenance />}
+                    />
+
+                    <Route
+                        path="/approval"
+                        element={<Approval />}
+                    />
+
+                    <Route
+                        path="/history"
+                        element={<History />}
+                    />
+
+                </Route>
+
+            </Routes>
+
         </BrowserRouter>
+
     );
 }
 

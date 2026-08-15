@@ -7,7 +7,7 @@ import {
     Trash2
 } from "lucide-react";
 
-const API = "http://100.88.123.49:3000";
+const API = "http://localhost:3000";
 
 function Equipment() {
 

@@ -8,8 +8,10 @@ import {
 } from "lucide-react";
 
 import {
-    NavLink
+    NavLink,
+    useNavigate
 } from "react-router-dom";
+
 
 const menuItems = [
     {
@@ -39,13 +41,43 @@ const menuItems = [
     }
 ];
 
+
 function Sidebar() {
+
+    // =========================
+    // NAVIGATE
+    // =========================
+
+    const navigate = useNavigate();
+
+
+    // =========================
+    // LOGOUT
+    // =========================
+
+    const handleLogout = () => {
+
+        // Hapus token login
+        localStorage.removeItem("token");
+
+        // Hapus data user
+        localStorage.removeItem("user");
+
+        // Kembali ke halaman login
+        navigate("/login", {
+            replace: true
+        });
+
+    };
+
 
     return (
 
         <aside className="sidebar">
 
-            {/* BRAND */}
+            {/* =========================
+                BRAND
+            ========================= */}
 
             <div className="brand">
 
@@ -68,7 +100,9 @@ function Sidebar() {
             </div>
 
 
-            {/* MENU */}
+            {/* =========================
+                MENU
+            ========================= */}
 
             <nav className="navigation">
 
@@ -112,11 +146,17 @@ function Sidebar() {
             </nav>
 
 
-            {/* FOOTER */}
+            {/* =========================
+                FOOTER
+            ========================= */}
 
             <div className="sidebar-footer">
 
-                <button className="logout-btn">
+                <button
+                    type="button"
+                    className="logout-btn"
+                    onClick={handleLogout}
+                >
 
                     <LogOut size={15} />
 
@@ -129,7 +169,10 @@ function Sidebar() {
             </div>
 
         </aside>
+
     );
+
 }
+
 
 export default Sidebar;
