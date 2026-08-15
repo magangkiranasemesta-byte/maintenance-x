@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Lock, User, Eye, EyeOff, Wrench } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+    Lock,
+    User,
+    Eye,
+    EyeOff,
+    Wrench
+} from "lucide-react";
 
 const API = "http://localhost:3000";
 
@@ -194,7 +200,9 @@ function Login() {
                     </div>
 
 
-                    {/* ERROR */}
+                    {/* =========================
+                        ERROR
+                    ========================= */}
 
                     {error && (
 
@@ -205,13 +213,19 @@ function Login() {
                     )}
 
 
+                    {/* =========================
+                        LOGIN FORM
+                    ========================= */}
+
                     <form
                         onSubmit={handleSubmit}
                         className="login-form"
                     >
 
 
-                        {/* USERNAME */}
+                        {/* =========================
+                            USERNAME
+                        ========================= */}
 
                         <div className="login-field">
 
@@ -241,7 +255,9 @@ function Login() {
                         </div>
 
 
-                        {/* PASSWORD */}
+                        {/* =========================
+                            PASSWORD
+                        ========================= */}
 
                         <div className="login-field">
 
@@ -293,7 +309,9 @@ function Login() {
                         </div>
 
 
-                        {/* LOGIN BUTTON */}
+                        {/* =========================
+                            LOGIN BUTTON
+                        ========================= */}
 
                         <button
                             type="submit"
@@ -312,7 +330,26 @@ function Login() {
                     </form>
 
 
-                    {/* DEMO ACCOUNT */}
+                    {/* =========================
+                        REGISTER
+                    ========================= */}
+
+                    <div className="login-register">
+
+                        <span>
+                            Belum punya akun?
+                        </span>
+
+                        <Link to="/register">
+                            Register
+                        </Link>
+
+                    </div>
+
+
+                    {/* =========================
+                        DEMO ACCOUNT
+                    ========================= */}
 
                     <div className="login-demo">
 
