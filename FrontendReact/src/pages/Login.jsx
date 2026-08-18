@@ -139,240 +139,208 @@ function Login() {
 
     return (
 
-        <div className="login-page">
+    <div className="login-page">
 
-            <div className="login-container">
+        <div className="login-container login-animate">
 
 
-                {/* =========================
-                    LEFT SIDE
-                ========================= */}
+            {/* =========================
+                LEFT SIDE
+            ========================= */}
 
-                <div className="login-brand">
+            <div className="login-brand brand-animate">
 
-                    <div className="brand-logo">
-                        <Wrench size={30} />
-                    </div>
+                <div className="brand-logo">
+                    <Wrench size={30} />
+                </div>
 
-                    <h1>
-                        MaintenX
-                    </h1>
+                <h1>
+                    MaintenX
+                </h1>
+
+                <p>
+                    Maintenance Management System
+                </p>
+
+                <div className="brand-description">
+
+                    <span>
+                        Sistem manajemen maintenance
+                    </span>
+
+                    <span>
+                        untuk memantau dan mengelola
+                    </span>
+
+                    <span>
+                        equipment perusahaan.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            {/* =========================
+                RIGHT SIDE
+            ========================= */}
+
+            <div className="login-form-container form-animate">
+
+                <div className="login-header">
+
+                    <h2>
+                        Selamat Datang
+                    </h2>
 
                     <p>
-                        Maintenance Management System
+                        Silakan login untuk melanjutkan
                     </p>
-
-                    <div className="brand-description">
-
-                        <span>
-                            Sistem manajemen maintenance
-                        </span>
-
-                        <span>
-                            untuk memantau dan mengelola
-                        </span>
-
-                        <span>
-                            equipment perusahaan.
-                        </span>
-
-                    </div>
 
                 </div>
 
 
-                {/* =========================
-                    RIGHT SIDE
-                ========================= */}
+                {error && (
 
-                <div className="login-form-container">
+                    <div className="login-error">
+                        {error}
+                    </div>
 
-                    <div className="login-header">
+                )}
 
-                        <h2>
-                            Selamat Datang
-                        </h2>
 
-                        <p>
-                            Silakan login untuk melanjutkan
-                        </p>
+                <form
+                    onSubmit={handleSubmit}
+                    className="login-form"
+                >
+
+                    <div className="login-field">
+
+                        <label>
+                            Username
+                        </label>
+
+                        <div className="login-input-wrapper">
+
+                            <User
+                                size={18}
+                                className="login-input-icon"
+                            />
+
+                            <input
+                                type="text"
+                                name="username"
+                                value={form.username}
+                                onChange={handleChange}
+                                placeholder="Masukkan username"
+                                autoComplete="username"
+                                required
+                            />
+
+                        </div>
 
                     </div>
 
 
-                    {/* =========================
-                        ERROR
-                    ========================= */}
+                    <div className="login-field">
 
-                    {error && (
+                        <label>
+                            Password
+                        </label>
 
-                        <div className="login-error">
-                            {error}
+                        <div className="login-input-wrapper">
+
+                            <Lock
+                                size={18}
+                                className="login-input-icon"
+                            />
+
+                            <input
+                                type={
+                                    showPassword
+                                        ? "text"
+                                        : "password"
+                                }
+                                name="password"
+                                value={form.password}
+                                onChange={handleChange}
+                                placeholder="Masukkan password"
+                                autoComplete="current-password"
+                                required
+                            />
+
+                            <button
+                                type="button"
+                                className="password-toggle"
+                                onClick={() =>
+                                    setShowPassword(
+                                        !showPassword
+                                    )
+                                }
+                            >
+
+                                {showPassword ? (
+                                    <EyeOff size={18} />
+                                ) : (
+                                    <Eye size={18} />
+                                )}
+
+                            </button>
+
                         </div>
 
-                    )}
+                    </div>
 
 
-                    {/* =========================
-                        LOGIN FORM
-                    ========================= */}
-
-                    <form
-                        onSubmit={handleSubmit}
-                        className="login-form"
+                    <button
+                        type="submit"
+                        className="login-submit"
+                        disabled={loading}
                     >
 
+                        {loading
+                            ? "Memproses..."
+                            : "Login"
+                        }
 
-                        {/* =========================
-                            USERNAME
-                        ========================= */}
+                    </button>
 
-                        <div className="login-field">
-
-                            <label>
-                                Username
-                            </label>
-
-                            <div className="login-input-wrapper">
-
-                                <User
-                                    size={18}
-                                    className="login-input-icon"
-                                />
-
-                                <input
-                                    type="text"
-                                    name="username"
-                                    value={form.username}
-                                    onChange={handleChange}
-                                    placeholder="Masukkan username"
-                                    autoComplete="username"
-                                    required
-                                />
-
-                            </div>
-
-                        </div>
+                </form>
 
 
-                        {/* =========================
-                            PASSWORD
-                        ========================= */}
+                <div className="login-register">
 
-                        <div className="login-field">
+                    <span>
+                        Belum punya akun?
+                    </span>
 
-                            <label>
-                                Password
-                            </label>
+                    <Link to="/register">
+                        Register
+                    </Link>
 
-                            <div className="login-input-wrapper">
-
-                                <Lock
-                                    size={18}
-                                    className="login-input-icon"
-                                />
-
-                                <input
-                                    type={
-                                        showPassword
-                                            ? "text"
-                                            : "password"
-                                    }
-                                    name="password"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    placeholder="Masukkan password"
-                                    autoComplete="current-password"
-                                    required
-                                />
-
-                                <button
-                                    type="button"
-                                    className="password-toggle"
-                                    onClick={() =>
-                                        setShowPassword(
-                                            !showPassword
-                                        )
-                                    }
-                                >
-
-                                    {showPassword ? (
-                                        <EyeOff size={18} />
-                                    ) : (
-                                        <Eye size={18} />
-                                    )}
-
-                                </button>
-
-                            </div>
-
-                        </div>
+                </div>
 
 
-                        {/* =========================
-                            LOGIN BUTTON
-                        ========================= */}
+                <div className="login-demo">
 
-                        <button
-                            type="submit"
-                            className="login-submit"
-                            disabled={loading}
-                        >
+                    <p>
+                        Demo Account
+                    </p>
 
-                            {loading
-                                ? "Memproses..."
-                                : "Login"
-                            }
-
-                        </button>
-
-
-                    </form>
-
-
-                    {/* =========================
-                        REGISTER
-                    ========================= */}
-
-                    <div className="login-register">
-
-                        <span>
-                            Belum punya akun?
-                        </span>
-
-                        <Link to="/register">
-                            Register
-                        </Link>
-
+                    <div>
+                        Admin: <strong>admin</strong> / admin123
                     </div>
 
+                    <div>
+                        Engineer: <strong>engineer</strong> / engineer123
+                    </div>
 
-                    {/* =========================
-                        DEMO ACCOUNT
-                    ========================= */}
+                    <div>
+                        Supervisor: <strong>supervisor</strong> / supervisor123
+                    </div>
 
-                    <div className="login-demo">
-
-                        <p>
-                            Demo Account
-                        </p>
-
-                        <div>
-                            Admin: <strong>admin</strong> / admin123
-                        </div>
-
-                        <div>
-                            Engineer: <strong>engineer</strong> / engineer123
-                        </div>
-
-                        <div>
-                            Supervisor: <strong>supervisor</strong> / supervisor123
-                        </div>
-
-                        <div>
-                            Manager: <strong>manager</strong> / manager123
-                        </div>
-
+                    <div>
+                        Manager: <strong>manager</strong> / manager123
                     </div>
 
                 </div>
@@ -381,7 +349,9 @@ function Login() {
 
         </div>
 
-    );
+    </div>
+
+);
 
 }
 
