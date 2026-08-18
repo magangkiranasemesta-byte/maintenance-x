@@ -7,9 +7,10 @@ import {
 
 import Sidebar from "./components/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoute";
 
 import Login from "./pages/Login";
-import Register from './pages/Register';
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Equipment from "./pages/Equipment";
 import Maintenance from "./pages/Maintenance";
@@ -76,32 +77,113 @@ function App() {
                     }
                 >
 
+                    {/* =====================
+                        DASHBOARD
+                    ===================== */}
+
                     <Route
                         path="/"
-                        element={<Dashboard />}
+                        element={
+                            <RoleRoute permission="dashboard">
+                                <Dashboard />
+                            </RoleRoute>
+                        }
                     />
+
+
+                    {/* =====================
+                        EQUIPMENT
+                    ===================== */}
 
                     <Route
                         path="/equipment"
-                        element={<Equipment />}
+                        element={
+                            <RoleRoute permission="equipment">
+                                <Equipment />
+                            </RoleRoute>
+                        }
                     />
+
+
+                    {/* =====================
+                        MAINTENANCE
+                    ===================== */}
 
                     <Route
                         path="/maintenance"
-                        element={<Maintenance />}
+                        element={
+                            <RoleRoute permission="maintenance">
+                                <Maintenance />
+                            </RoleRoute>
+                        }
                     />
+
+
+                    {/* =====================
+                        APPROVAL
+                    ===================== */}
 
                     <Route
                         path="/approval"
-                        element={<Approval />}
+                        element={
+                            <RoleRoute permission="approval">
+                                <Approval />
+                            </RoleRoute>
+                        }
                     />
+
+
+                    {/* =====================
+                        HISTORY
+                    ===================== */}
 
                     <Route
                         path="/history"
-                        element={<History />}
+                        element={
+                            <RoleRoute permission="history">
+                                <History />
+                            </RoleRoute>
+                        }
                     />
 
                 </Route>
+
+
+                {/* =====================
+                    UNAUTHORIZED
+                ===================== */}
+
+                <Route
+                    path="/unauthorized"
+                    element={
+                        <div className="unauthorized-page">
+
+                            <div className="unauthorized-card">
+
+                                <h1>403</h1>
+
+                                <h2>
+                                    Access Denied
+                                </h2>
+
+                                <p>
+                                    Anda tidak memiliki akses
+                                    ke halaman ini.
+                                </p>
+
+                                <button
+                                    onClick={() =>
+                                        window.history.back()
+                                    }
+                                >
+                                    Kembali
+                                </button>
+
+                            </div>
+
+                        </div>
+                    }
+                />
 
             </Routes>
 

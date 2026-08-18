@@ -12,32 +12,39 @@ import {
     useNavigate
 } from "react-router-dom";
 
+import { rolePermissions } from "../config/permissions";
+
 
 const menuItems = [
     {
         label: "Dashboard",
         icon: LayoutDashboard,
-        path: "/"
+        path: "/",
+        permission: "dashboard"
     },
     {
         label: "Equipment",
         icon: Package,
-        path: "/equipment"
+        path: "/equipment",
+        permission: "equipment"
     },
     {
         label: "Maintenance",
         icon: Wrench,
-        path: "/maintenance"
+        path: "/maintenance",
+        permission: "maintenance"
     },
     {
         label: "Approval",
         icon: Check,
-        path: "/approval"
+        path: "/approval",
+        permission: "approval"
     },
     {
         label: "History",
         icon: History,
-        path: "/history"
+        path: "/history",
+        permission: "history"
     }
 ];
 
@@ -52,18 +59,49 @@ function Sidebar() {
 
 
     // =========================
+    // USER LOGIN
+    // =========================
+
+    const userData = localStorage.getItem("user");
+
+    let user = null;
+
+    try {
+
+        user = userData
+            ? JSON.parse(userData)
+            : null;
+
+    } catch (error) {
+
+        console.error(
+            "Gagal membaca data user:",
+            error
+        );
+
+    }
+
+
+    // =========================
+    // ROLE
+    // =========================
+
+    const role = user?.role?.toLowerCase();
+
+    const permissions =
+        rolePermissions[role];
+
+
+    // =========================
     // LOGOUT
     // =========================
 
     const handleLogout = () => {
 
-        // Hapus token login
         localStorage.removeItem("token");
 
-        // Hapus data user
         localStorage.removeItem("user");
 
-        // Kembali ke halaman login
         navigate("/login", {
             replace: true
         });
@@ -111,37 +149,44 @@ function Sidebar() {
                 </p>
 
 
-                {menuItems.map((item) => {
+                {menuItems
+                    .filter(
+                        item =>
+                            permissions?.[item.permission]
+                    )
+                    .map((item) => {
 
-                    const Icon = item.icon;
+                        const Icon = item.icon;
 
-                    return (
+                        return (
 
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                                `nav-item ${
-                                    isActive ? "active" : ""
-                                }`
-                            }
-                        >
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) =>
+                                    `nav-item ${
+                                        isActive
+                                            ? "active"
+                                            : ""
+                                    }`
+                                }
+                            >
 
-                            <span className="nav-icon">
+                                <span className="nav-icon">
 
-                                <Icon size={16} />
+                                    <Icon size={16} />
 
-                            </span>
+                                </span>
 
-                            <span>
-                                {item.label}
-                            </span>
+                                <span>
+                                    {item.label}
+                                </span>
 
-                        </NavLink>
+                            </NavLink>
 
-                    );
+                        );
 
-                })}
+                    })}
 
             </nav>
 

@@ -339,9 +339,9 @@ function Login() {
                         Supervisor: <strong>supervisor</strong> / supervisor123
                     </div>
 
-                    <div>
+                    {/* <div>
                         Manager: <strong>manager</strong> / manager123
-                    </div>
+                    </div> */}
 
                 </div>
 
