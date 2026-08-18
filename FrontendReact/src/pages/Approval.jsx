@@ -1,249 +1,580 @@
 import { useEffect, useState } from "react";
-import { Plus, X, Settings } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Wrench } from "lucide-react";
 
 const API = "http://localhost:3000";
 
-function Equipment() {
-    const [equipment, setEquipment] = useState([]);
+function Approval() {
+
+    const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modalOpen, setModalOpen] = useState(false);
 
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
 
-    const [formData, setFormData] = useState({
-        equipment_code: "",
-        name: "",
-        location: "",
-        description: "",
-        status: "ACTIVE",
-    });
+    const [processingId, setProcessingId] = useState(null);
+
 
     // =========================
-    // AMBIL DATA EQUIPMENT
+    // ALERT
     // =========================
-    const loadEquipment = async () => {
+
+    const showAlert = (text, type) => {
+
+        setMessage(text);
+        setMessageType(type);
+
+        setTimeout(() => {
+            setMessage("");
+            setMessageType("");
+        }, 3500);
+
+    };
+
+
+    // =========================
+    // LOAD MAINTENANCE REQUEST
+    // =========================
+
+    const loadRequests = async () => {
+
         try {
+
             setLoading(true);
 
-            const response = await fetch(`${API}/api/equipment`);
+            const response = await fetch(
+                `${API}/api/maintenance`
+            );
 
             if (!response.ok) {
-                throw new Error("Gagal mengambil data equipment");
+                throw new Error(
+                    "Gagal mengambil data maintenance"
+                );
             }
 
             const data = await response.json();
 
-            setEquipment(Array.isArray(data) ? data : []);
+           const waitingApproval = Array.isArray(data)
+    ? data.filter(
+        (item) =>
+            String(item.status || "")
+                .toUpperCase()
+                .trim() === "PENDING_SUPERVISOR"
+    )
+                : [];
+
+            setRequests(waitingApproval);
+
         } catch (error) {
-            console.error("Load equipment error:", error);
 
-            setMessage("Gagal mengambil data. Pastikan backend Node.js berjalan.");
-            setMessageType("error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadEquipment();
-    }, []);
-
-    // =========================
-    // HANDLE INPUT
-    // =========================
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-
-    // =========================
-    // TAMBAH EQUIPMENT
-    // =========================
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            const response = await fetch(`${API}/api/equipment`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    result.message || "Gagal menambahkan equipment"
-                );
-            }
-
-            setMessage(
-                `Equipment berhasil ditambahkan. ID: ${result.id}`
+            console.error(
+                "Load approval error:",
+                error
             );
 
-            setMessageType("success");
+            setRequests([]);
 
-            setFormData({
-                equipment_code: "",
-                name: "",
-                location: "",
-                description: "",
-                status: "ACTIVE",
-            });
+            showAlert(
+                error.message,
+                "error"
+            );
 
-            setModalOpen(false);
+        } finally {
 
-            loadEquipment();
-        } catch (error) {
-            console.error("Add equipment error:", error);
+            setLoading(false);
 
-            setMessage(error.message);
-            setMessageType("error");
         }
+
     };
 
-    return (
-        <div className="equipment-page">
 
-            {/* HEADER */}
-            <div className="equipment-page-header">
+    // =========================
+    // INITIAL LOAD
+    // =========================
+
+    useEffect(() => {
+
+        loadRequests();
+
+    }, []);
+
+
+    // =========================
+    // UPDATE STATUS
+    // =========================
+
+    const updateStatus = async (
+        id,
+        status
+    ) => {
+
+        try {
+
+            setProcessingId(id);
+
+            const response = await fetch(
+                `${API}/api/maintenance/${id}/status`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+
+                    body: JSON.stringify({
+                        status: status,
+                    }),
+                }
+            );
+
+            const result =
+                await response.json();
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.message ||
+                    "Gagal mengubah status request"
+                );
+
+            }
+
+
+            if (status === "APPROVED") {
+
+                showAlert(
+                    "Maintenance request berhasil disetujui.",
+                    "success"
+                );
+
+            } else {
+
+                showAlert(
+                    "Maintenance request berhasil ditolak.",
+                    "success"
+                );
+
+            }
+
+
+            loadRequests();
+
+        } catch (error) {
+
+            console.error(
+                "Update approval error:",
+                error
+            );
+
+            showAlert(
+                error.message,
+                "error"
+            );
+
+        } finally {
+
+            setProcessingId(null);
+
+        }
+
+    };
+
+
+    // =========================
+    // APPROVE
+    // =========================
+
+    const handleApprove = (id) => {
+
+        const confirmApprove =
+            window.confirm(
+                "Apakah kamu yakin ingin menyetujui request maintenance ini?"
+            );
+
+        if (!confirmApprove) {
+            return;
+        }
+
+        updateStatus(
+            id,
+            "APPROVED"
+        );
+
+    };
+
+
+    // =========================
+    // REJECT
+    // =========================
+
+    const handleReject = (id) => {
+
+        const confirmReject =
+            window.confirm(
+                "Apakah kamu yakin ingin menolak request maintenance ini?"
+            );
+
+        if (!confirmReject) {
+            return;
+        }
+
+        updateStatus(
+            id,
+            "REJECTED"
+        );
+
+    };
+
+
+    // =========================
+    // FORMAT DATE
+    // =========================
+
+    const formatDate = (date) => {
+
+        if (!date) {
+            return "-";
+        }
+
+        return new Date(date).toLocaleString(
+            "id-ID"
+        );
+
+    };
+
+
+    return (
+
+        <div className="approval-page">
+
+
+            {/* =========================
+                HEADER
+            ========================= */}
+
+            <div className="approval-page-header">
 
                 <div>
+
                     <span className="page-label">
-                        Equipment
+                        Approval
                     </span>
 
                     <h1>
-                        Equipment
+                        Maintenance Approval
                     </h1>
 
                     <p>
-                        Kelola data equipment yang tersimpan di database.
+                        Kelola persetujuan maintenance request.
                     </p>
-                </div>
 
-                <button
-                    className="primary-btn"
-                    onClick={() => setModalOpen(true)}
-                >
-                    <Plus size={16} />
-                    Tambah Equipment
-                </button>
+                </div>
 
             </div>
 
 
-            {/* ALERT */}
+            {/* =========================
+                ALERT
+            ========================= */}
+
             {message && (
-                <div className={`equipment-alert ${messageType}`}>
+
+                <div
+                    className={`approval-alert ${messageType}`}
+                >
                     {message}
                 </div>
+
             )}
 
 
-            {/* TABLE */}
-            <div className="equipment-content-card">
+            {/* =========================
+                SUMMARY
+            ========================= */}
 
-                <div className="equipment-table-wrap">
+            <div className="approval-summary">
 
-                    <table className="equipment-table">
+                <div className="approval-summary-card">
+
+                    <div className="approval-summary-icon waiting">
+
+                        <Clock size={20} />
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Waiting Approval
+                        </span>
+
+                        <strong>
+                            {requests.length}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {/* =========================
+                TABLE
+            ========================= */}
+
+            <div className="approval-content-card">
+
+                <div className="approval-table-wrap">
+
+                    <table className="approval-table">
 
                         <thead>
+
                             <tr>
-                                <th>ID</th>
-                                <th>KODE</th>
-                                <th>NAMA</th>
-                                <th>LOKASI</th>
-                                <th>DESKRIPSI</th>
-                                <th>STATUS</th>
+
+                                <th>
+                                    ID
+                                </th>
+
+                                <th>
+                                    EQUIPMENT
+                                </th>
+
+                                <th>
+                                    ENGINEER
+                                </th>
+
+                                <th>
+                                    DESCRIPTION
+                                </th>
+
+                                <th>
+                                    PRIORITY
+                                </th>
+
+                                <th>
+                                    STATUS
+                                </th>
+
+                                <th>
+                                    TANGGAL
+                                </th>
+
+                                <th>
+                                    ACTION
+                                </th>
+
                             </tr>
+
                         </thead>
+
 
                         <tbody>
 
                             {loading ? (
 
                                 <tr>
+
                                     <td
-                                        colSpan="6"
-                                        className="table-message"
+                                        colSpan="8"
+                                        className="approval-table-message"
                                     >
                                         Memuat data...
                                     </td>
+
                                 </tr>
 
-                            ) : equipment.length === 0 ? (
+                            ) : requests.length === 0 ? (
 
                                 <tr>
+
                                     <td
-                                        colSpan="6"
-                                        className="table-message"
+                                        colSpan="8"
+                                        className="approval-table-message"
                                     >
-                                        Belum ada equipment.
+
+                                        <div className="approval-empty">
+
+                                            <CheckCircle
+                                                size={32}
+                                            />
+
+                                            <strong>
+                                                Tidak ada request
+                                            </strong>
+
+                                            <span>
+                                                Semua maintenance request sudah diproses.
+                                            </span>
+
+                                        </div>
+
                                     </td>
+
                                 </tr>
 
                             ) : (
 
-                                equipment.map((item) => (
+                                requests.map(
+                                    (item) => (
 
-                                    <tr key={item.id}>
+                                        <tr
+                                            key={item.id}
+                                        >
 
-                                        <td>
-                                            {item.id}
-                                        </td>
+                                            {/* ID */}
 
-                                        <td>
-                                            <strong>
-                                                {item.equipment_code}
-                                            </strong>
-                                        </td>
+                                            <td>
+                                                #{item.id}
+                                            </td>
 
-                                        <td>
-                                            <div className="equipment-name-cell">
 
-                                                <div className="equipment-small-icon">
-                                                    <Settings size={13} />
+                                            {/* EQUIPMENT */}
+
+                                            <td>
+
+                                                <div className="approval-equipment">
+
+                                                    <div className="approval-equipment-icon">
+
+                                                        <Wrench
+                                                            size={14}
+                                                        />
+
+                                                    </div>
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Equipment #
+                                                            {item.equipment_id}
+                                                        </strong>
+
+                                                    </div>
+
                                                 </div>
 
-                                                <span>
-                                                    {item.name}
+                                            </td>
+
+
+                                            {/* ENGINEER */}
+
+                                            <td>
+                                                Engineer #
+                                                {item.engineer_id}
+                                            </td>
+
+
+                                            {/* DESCRIPTION */}
+
+                                            <td>
+                                                {item.description || "-"}
+                                            </td>
+
+
+                                            {/* PRIORITY */}
+
+                                            <td>
+
+                                                <span
+                                                    className={`approval-priority ${
+                                                        String(
+                                                            item.priority || ""
+                                                        ).toLowerCase()
+                                                    }`}
+                                                >
+                                                    {item.priority}
                                                 </span>
 
-                                            </div>
-                                        </td>
+                                            </td>
 
-                                        <td>
-                                            {item.location}
-                                        </td>
 
-                                        <td>
-                                            {item.description || "-"}
-                                        </td>
+                                            {/* STATUS */}
 
-                                        <td>
+                                            <td>
 
-                                            <span
-                                                className={`equipment-status ${
-                                                    String(item.status || "")
-                                                        .toLowerCase()
-                                                }`}
-                                            >
-                                                {item.status}
-                                            </span>
+                                                <span className="approval-status waiting">
 
-                                        </td>
+                                                    <Clock
+                                                        size={13}
+                                                    />
 
-                                    </tr>
+                                                    {item.status}
 
-                                ))
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* DATE */}
+
+                                            <td>
+                                                {formatDate(
+                                                    item.created_at
+                                                )}
+                                            </td>
+
+
+                                            {/* ACTION */}
+
+                                            <td>
+
+                                                <div className="approval-actions">
+
+                                                    <button
+                                                        type="button"
+                                                        className="approve-btn"
+                                                        disabled={
+                                                            processingId ===
+                                                            item.id
+                                                        }
+                                                        onClick={() =>
+                                                            handleApprove(
+                                                                item.id
+                                                            )
+                                                        }
+                                                    >
+
+                                                        <CheckCircle
+                                                            size={15}
+                                                        />
+
+                                                        Approve
+
+                                                    </button>
+
+
+                                                    <button
+                                                        type="button"
+                                                        className="reject-btn"
+                                                        disabled={
+                                                            processingId ===
+                                                            item.id
+                                                        }
+                                                        onClick={() =>
+                                                            handleReject(
+                                                                item.id
+                                                            )
+                                                        }
+                                                    >
+
+                                                        <XCircle
+                                                            size={15}
+                                                        />
+
+                                                        Reject
+
+                                                    </button>
+
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+                                )
 
                             )}
 
@@ -255,170 +586,11 @@ function Equipment() {
 
             </div>
 
-
-            {/* MODAL */}
-            {modalOpen && (
-
-                <div className="equipment-modal">
-
-                    <div className="equipment-modal-box">
-
-                        {/* MODAL HEADER */}
-                        <div className="equipment-modal-header">
-
-                            <div>
-                                <h2>
-                                    Tambah Equipment
-                                </h2>
-
-                                <p>
-                                    Masukkan informasi equipment baru.
-                                </p>
-                            </div>
-
-                            <button
-                                className="close-modal"
-                                onClick={() => setModalOpen(false)}
-                            >
-                                <X size={20} />
-                            </button>
-
-                        </div>
-
-
-                        {/* FORM */}
-                        <form
-                            onSubmit={handleSubmit}
-                            className="equipment-form"
-                        >
-
-                            <div className="equipment-form-grid">
-
-                                <div className="equipment-field">
-
-                                    <label>
-                                        Kode Equipment
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="equipment_code"
-                                        value={formData.equipment_code}
-                                        onChange={handleChange}
-                                        placeholder="EQ-007"
-                                        required
-                                    />
-
-                                </div>
-
-
-                                <div className="equipment-field">
-
-                                    <label>
-                                        Nama Equipment
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        placeholder="Mesin Produksi 01"
-                                        required
-                                    />
-
-                                </div>
-
-
-                                <div className="equipment-field">
-
-                                    <label>
-                                        Lokasi
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="location"
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        placeholder="Area Produksi"
-                                        required
-                                    />
-
-                                </div>
-
-
-                                <div className="equipment-field">
-
-                                    <label>
-                                        Status
-                                    </label>
-
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="ACTIVE">
-                                            ACTIVE
-                                        </option>
-
-                                        <option value="INACTIVE">
-                                            INACTIVE
-                                        </option>
-                                    </select>
-
-                                </div>
-
-
-                                <div className="equipment-field full">
-
-                                    <label>
-                                        Deskripsi
-                                    </label>
-
-                                    <textarea
-                                        name="description"
-                                        value={formData.description}
-                                        onChange={handleChange}
-                                        placeholder="Keterangan equipment"
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            {/* BUTTON */}
-                            <div className="equipment-form-actions">
-
-                                <button
-                                    type="button"
-                                    className="secondary-btn"
-                                    onClick={() => setModalOpen(false)}
-                                >
-                                    Batal
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    className="primary-btn"
-                                >
-                                    Simpan
-                                </button>
-
-                            </div>
-
-                        </form>
-
-                    </div>
-
-                </div>
-
-            )}
-
         </div>
+
     );
+
 }
 
-export default Equipment;
+
+export default Approval;

@@ -6,9 +6,11 @@ import {
     Bell,
     ChevronRight
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
 
+    const navigate = useNavigate();
     const maintenanceRequests = [
         {
             equipment: "AC Unit 01",
@@ -219,8 +221,11 @@ function Dashboard() {
                         </div>
 
 
-                        <button className="request-button">
-                            + Request Maintenance
+                       <button
+                                className="request-button"
+                                onClick={() => navigate("/maintenance")}
+                        >
+                                 + Request Maintenance
                         </button>
 
                     </div>
