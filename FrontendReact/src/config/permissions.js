@@ -22,6 +22,14 @@ export const rolePermissions = {
         maintenance: true,
         approval: true,
         history: true
+    },
+
+    manager: {
+    dashboard: true,
+    equipment: true,
+    maintenance: false,
+    approval: true,
+    history: true
     }
 
 };
