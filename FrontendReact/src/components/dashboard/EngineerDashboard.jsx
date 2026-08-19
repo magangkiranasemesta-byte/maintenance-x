@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import {
     Wrench,
@@ -15,6 +15,14 @@ import StatusBadge from "./StatusBadge";
 
 const EngineerDashboard = () => {
 
+    // ==============================
+    // TODAY'S WORK MODAL
+    // ==============================
+    const [showTodayWork, setShowTodayWork] = useState(false);
+
+    // ==============================
+    // MAINTENANCE TASKS
+    // ==============================
     const maintenanceTasks = [
         {
             id: "MT-001",
@@ -42,6 +50,9 @@ const EngineerDashboard = () => {
         }
     ];
 
+    // ==============================
+    // TODAY'S SCHEDULE
+    // ==============================
     const schedules = [
         {
             time: "09:00",
@@ -63,8 +74,9 @@ const EngineerDashboard = () => {
     return (
         <div className="role-dashboard">
 
-            {/* HEADER */}
-
+            {/* =====================================
+                HEADER
+            ===================================== */}
             <div className="dashboard-header">
 
                 <div>
@@ -84,18 +96,28 @@ const EngineerDashboard = () => {
 
                 </div>
 
-                <div className="dashboard-date">
+
+                {/* =====================================
+                    TODAY'S WORK BUTTON
+                ===================================== */}
+                <button
+                    type="button"
+                    className="dashboard-date"
+                    onClick={() => setShowTodayWork(true)}
+                >
                     <CalendarDays size={18} />
+
                     <span>
                         Today's Work
                     </span>
-                </div>
+                </button>
 
             </div>
 
 
-            {/* STAT */}
-
+            {/* =====================================
+                STAT
+            ===================================== */}
             <div className="dashboard-stat-grid">
 
                 <StatCard
@@ -133,13 +155,15 @@ const EngineerDashboard = () => {
             </div>
 
 
-            {/* TASKS */}
-
+            {/* =====================================
+                MAINTENANCE TASKS
+            ===================================== */}
             <div className="dashboard-card">
 
                 <div className="card-header">
 
                     <div>
+
                         <h3>
                             My Maintenance Tasks
                         </h3>
@@ -147,6 +171,7 @@ const EngineerDashboard = () => {
                         <p>
                             Maintenance assigned to you
                         </p>
+
                     </div>
 
                     <Wrench size={20} />
@@ -159,14 +184,33 @@ const EngineerDashboard = () => {
                     <table className="maintenance-table">
 
                         <thead>
+
                             <tr>
-                                <th>ID</th>
-                                <th>Equipment</th>
-                                <th>Type</th>
-                                <th>Priority</th>
-                                <th>Status</th>
+
+                                <th>
+                                    ID
+                                </th>
+
+                                <th>
+                                    Equipment
+                                </th>
+
+                                <th>
+                                    Type
+                                </th>
+
+                                <th>
+                                    Priority
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
                             </tr>
+
                         </thead>
+
 
                         <tbody>
 
@@ -175,17 +219,22 @@ const EngineerDashboard = () => {
                                 <tr key={task.id}>
 
                                     <td>
+
                                         <strong>
                                             {task.id}
                                         </strong>
+
                                     </td>
 
+
                                     <td>
+
                                         <div className="equipment-cell">
 
                                             <Package size={17} />
 
                                             <div>
+
                                                 <strong>
                                                     {task.equipment}
                                                 </strong>
@@ -193,25 +242,34 @@ const EngineerDashboard = () => {
                                                 <span>
                                                     {task.code}
                                                 </span>
+
                                             </div>
 
                                         </div>
+
                                     </td>
+
 
                                     <td>
                                         {task.type}
                                     </td>
 
+
                                     <td>
+
                                         <StatusBadge
                                             status={task.priority}
                                         />
+
                                     </td>
 
+
                                     <td>
+
                                         <StatusBadge
                                             status={task.status}
                                         />
+
                                     </td>
 
                                 </tr>
@@ -227,17 +285,21 @@ const EngineerDashboard = () => {
             </div>
 
 
-            {/* TWO COLUMN */}
-
+            {/* =====================================
+                TWO COLUMN
+            ===================================== */}
             <div className="dashboard-two-column">
 
-                {/* TODAY'S SCHEDULE */}
 
+                {/* =================================
+                    TODAY'S SCHEDULE
+                ================================= */}
                 <div className="dashboard-card">
 
                     <div className="card-header">
 
                         <div>
+
                             <h3>
                                 Today's Schedule
                             </h3>
@@ -245,6 +307,7 @@ const EngineerDashboard = () => {
                             <p>
                                 Your maintenance schedule
                             </p>
+
                         </div>
 
                         <CalendarDays size={20} />
@@ -288,13 +351,15 @@ const EngineerDashboard = () => {
                 </div>
 
 
-                {/* EQUIPMENT ISSUES */}
-
+                {/* =================================
+                    EQUIPMENT ISSUES
+                ================================= */}
                 <div className="dashboard-card">
 
                     <div className="card-header">
 
                         <div>
+
                             <h3>
                                 Equipment Issues
                             </h3>
@@ -302,6 +367,7 @@ const EngineerDashboard = () => {
                             <p>
                                 Equipment requiring attention
                             </p>
+
                         </div>
 
                         <AlertTriangle size={20} />
@@ -311,9 +377,11 @@ const EngineerDashboard = () => {
 
                     <div className="issue-list">
 
+
                         <div className="issue-item">
 
                             <div>
+
                                 <strong>
                                     CNC-001
                                 </strong>
@@ -321,9 +389,12 @@ const EngineerDashboard = () => {
                                 <span>
                                     CNC Machine
                                 </span>
+
                             </div>
 
-                            <StatusBadge status="Warning" />
+                            <StatusBadge
+                                status="Warning"
+                            />
 
                         </div>
 
@@ -331,6 +402,7 @@ const EngineerDashboard = () => {
                         <div className="issue-item">
 
                             <div>
+
                                 <strong>
                                     GEN-002
                                 </strong>
@@ -338,9 +410,12 @@ const EngineerDashboard = () => {
                                 <span>
                                     Generator
                                 </span>
+
                             </div>
 
-                            <StatusBadge status="Critical" />
+                            <StatusBadge
+                                status="Critical"
+                            />
 
                         </div>
 
@@ -348,6 +423,7 @@ const EngineerDashboard = () => {
                         <div className="issue-item">
 
                             <div>
+
                                 <strong>
                                     CMP-004
                                 </strong>
@@ -355,17 +431,269 @@ const EngineerDashboard = () => {
                                 <span>
                                     Compressor
                                 </span>
+
                             </div>
 
-                            <StatusBadge status="Warning" />
+                            <StatusBadge
+                                status="Warning"
+                            />
 
                         </div>
+
 
                     </div>
 
                 </div>
 
             </div>
+
+
+            {/* =====================================
+                TODAY'S WORK MODAL
+            ===================================== */}
+            {showTodayWork && (
+
+                <div
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0, 0, 0, 0.45)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                        padding: "20px"
+                    }}
+
+                    onClick={() => setShowTodayWork(false)}
+                >
+
+                    {/* =================================
+                        MODAL CONTENT
+                    ================================= */}
+                    <div
+                        style={{
+                            background: "#ffffff",
+                            width: "100%",
+                            maxWidth: "600px",
+                            maxHeight: "80vh",
+                            overflowY: "auto",
+                            borderRadius: "16px",
+                            padding: "24px",
+                            boxShadow:
+                                "0 20px 50px rgba(0,0,0,0.2)"
+                        }}
+
+                        onClick={(event) => {
+                            event.stopPropagation();
+                        }}
+                    >
+
+                        {/* =============================
+                            MODAL HEADER
+                        ============================= */}
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: "20px"
+                            }}
+                        >
+
+                            <div>
+
+                                <h2
+                                    style={{
+                                        margin: 0
+                                    }}
+                                >
+                                    Today's Work
+                                </h2>
+
+                                <p
+                                    style={{
+                                        margin:
+                                            "6px 0 0",
+                                        color: "#64748b"
+                                    }}
+                                >
+                                    Your maintenance
+                                    schedule for today
+                                </p>
+
+                            </div>
+
+
+                            {/* CLOSE BUTTON */}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowTodayWork(false)
+                                }
+                                style={{
+                                    border: "none",
+                                    background:
+                                        "transparent",
+                                    fontSize: "28px",
+                                    cursor: "pointer",
+                                    color: "#64748b",
+                                    lineHeight: 1
+                                }}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+
+                        {/* =============================
+                            EMPTY STATE
+                        ============================= */}
+                        {schedules.length === 0 ? (
+
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding:
+                                        "40px 20px",
+                                    color: "#64748b"
+                                }}
+                            >
+
+                                <CalendarDays
+                                    size={40}
+                                    style={{
+                                        marginBottom:
+                                            "10px"
+                                    }}
+                                />
+
+                                <h3>
+                                    No work scheduled
+                                    for today
+                                </h3>
+
+                                <p>
+                                    There are no
+                                    maintenance
+                                    activities
+                                    scheduled for
+                                    today.
+                                </p>
+
+                            </div>
+
+                        ) : (
+
+                            /* =========================
+                               TODAY'S WORK LIST
+                            ========================= */
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection:
+                                        "column",
+                                    gap: "12px"
+                                }}
+                            >
+
+                                {schedules.map(
+                                    (
+                                        schedule,
+                                        index
+                                    ) => (
+
+                                        <div
+                                            key={index}
+                                            style={{
+                                                display:
+                                                    "flex",
+                                                gap: "16px",
+                                                alignItems:
+                                                    "center",
+                                                padding:
+                                                    "16px",
+                                                border:
+                                                    "1px solid #e2e8f0",
+                                                borderRadius:
+                                                    "12px",
+                                                background:
+                                                    "#f8fafc"
+                                            }}
+                                        >
+
+                                            {/* TIME */}
+                                            <div
+                                                style={{
+                                                    minWidth:
+                                                        "60px",
+                                                    fontWeight:
+                                                        "700",
+                                                    color:
+                                                        "#334155"
+                                                }}
+                                            >
+                                                {
+                                                    schedule.time
+                                                }
+                                            </div>
+
+
+                                            {/* WORK INFO */}
+                                            <div
+                                                style={{
+                                                    flex: 1
+                                                }}
+                                            >
+
+                                                <strong
+                                                    style={{
+                                                        display:
+                                                            "block",
+                                                        marginBottom:
+                                                            "4px"
+                                                    }}
+                                                >
+                                                    {
+                                                        schedule.equipment
+                                                    }
+                                                </strong>
+
+                                                <span
+                                                    style={{
+                                                        color:
+                                                            "#64748b"
+                                                    }}
+                                                >
+                                                    {
+                                                        schedule.task
+                                                    }
+                                                </span>
+
+                                            </div>
+
+
+                                            {/* CLOCK ICON */}
+                                            <Clock
+                                                size={20}
+                                                color="#64748b"
+                                            />
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                </div>
+
+            )}
 
         </div>
     );
