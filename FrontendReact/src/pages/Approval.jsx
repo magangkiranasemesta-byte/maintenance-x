@@ -6,25 +6,33 @@ import {
     Clock,
     Wrench,
     UserCheck,
-    ShieldCheck
+    ShieldCheck,
+    AlertCircle,
+    RefreshCw
 } from "lucide-react";
 
+
+// ======================================================
+// API BACKEND
+// ======================================================
 
 const API = "http://localhost:3000";
 
 
+// ======================================================
+// APPROVAL PAGE
+// ======================================================
+
 function Approval() {
 
-    // =====================================================
-    // USER / ROLE
-    // =====================================================
+    // ==================================================
+    // USER LOGIN
+    // ==================================================
 
     const storedUser =
         localStorage.getItem("user");
 
-
     let user = null;
-
 
     try {
 
@@ -42,10 +50,12 @@ function Approval() {
     }
 
 
+    // ==================================================
+    // ROLE
+    // ==================================================
+
     const role =
-        String(
-            user?.role || ""
-        )
+        String(user?.role || "")
             .toLowerCase()
             .trim();
 
@@ -58,9 +68,9 @@ function Approval() {
         role === "manager";
 
 
-    // =====================================================
+    // ==================================================
     // STATE
-    // =====================================================
+    // ==================================================
 
     const [
         requests,
@@ -75,15 +85,9 @@ function Approval() {
 
 
     const [
-        message,
-        setMessage
-    ] = useState("");
-
-
-    const [
-        messageType,
-        setMessageType
-    ] = useState("");
+        refreshing,
+        setRefreshing
+    ] = useState(false);
 
 
     const [
@@ -92,117 +96,67 @@ function Approval() {
     ] = useState(null);
 
 
-    // =====================================================
-    // ALERT
-    // =====================================================
+    const [
+        notification,
+        setNotification
+    ] = useState(null);
 
-    const showAlert = (
-        text,
-        type
+
+    // ==================================================
+    // NOTIFICATION
+    // ==================================================
+
+    const showNotification = (
+        message,
+        type = "success"
     ) => {
 
-        setMessage(text);
-
-        setMessageType(type);
+        setNotification({
+            message,
+            type
+        });
 
 
         setTimeout(() => {
 
-            setMessage("");
+            setNotification(null);
 
-            setMessageType("");
-
-        }, 3500);
+        }, 5000);
 
     };
 
 
-    // =====================================================
-    // STATUS YANG HARUS DILIHAT BERDASARKAN ROLE
-    // =====================================================
+    // ==================================================
+    // STATUS YANG DITUNGGU
+    // ==================================================
 
-    const getWaitingStatus = () => {
-
-        if (isSupervisor) {
-
-            return "PENDING_SUPERVISOR";
-
-        }
-
-
-        if (isManager) {
-
-            return "WAITING_MANAGER_APPROVAL";
-
-        }
+    const waitingStatus =
+        isSupervisor
+            ? "PENDING_SUPERVISOR"
+            : isManager
+                ? "WAITING_MANAGER_APPROVAL"
+                : null;
 
 
-        return "";
+    // ==================================================
+    // LOAD MAINTENANCE
+    // ==================================================
 
-    };
-
-
-    // =====================================================
-    // JUDUL BERDASARKAN ROLE
-    // =====================================================
-
-    const getPageTitle = () => {
-
-        if (isSupervisor) {
-
-            return "Supervisor Approval";
-
-        }
-
-
-        if (isManager) {
-
-            return "Manager Approval";
-
-        }
-
-
-        return "Maintenance Approval";
-
-    };
-
-
-    const getPageDescription = () => {
-
-        if (isSupervisor) {
-
-            return (
-                "Review dan setujui maintenance request sebelum diteruskan ke manager."
-            );
-
-        }
-
-
-        if (isManager) {
-
-            return (
-                "Review maintenance request yang telah disetujui supervisor."
-            );
-
-        }
-
-
-        return (
-            "Kelola persetujuan maintenance request."
-        );
-
-    };
-
-
-    // =====================================================
-    // LOAD REQUEST
-    // =====================================================
-
-    const loadRequests = async () => {
+    const loadRequests = async (
+        showLoading = true
+    ) => {
 
         try {
 
-            setLoading(true);
+            if (showLoading) {
+
+                setLoading(true);
+
+            } else {
+
+                setRefreshing(true);
+
+            }
 
 
             const response =
@@ -211,10 +165,30 @@ function Approval() {
                 );
 
 
+            // ==========================================
+            // CEK HTTP
+            // ==========================================
+
             if (!response.ok) {
 
+                let errorData = null;
+
+                try {
+
+                    errorData =
+                        await response.json();
+
+                } catch {
+
+                    // response bukan JSON
+
+                }
+
+
                 throw new Error(
-                    "Gagal mengambil data maintenance"
+                    errorData?.error ||
+                    errorData?.message ||
+                    `Server error ${response.status}`
                 );
 
             }
@@ -224,76 +198,107 @@ function Approval() {
                 await response.json();
 
 
-            const waitingStatus =
-                getWaitingStatus();
+            // ==========================================
+            // PASTIKAN ARRAY
+            // ==========================================
+
+            if (!Array.isArray(data)) {
+
+                throw new Error(
+                    "Data maintenance dari server bukan array."
+                );
+
+            }
 
 
-            const waitingApproval =
-                Array.isArray(data)
+            // ==========================================
+            // FILTER SESUAI ROLE
+            // ==========================================
 
-                    ? data.filter(
-                        (item) =>
+            const filtered =
+                data.filter(
+                    (item) => {
 
+                        const status =
                             String(
                                 item.status || ""
                             )
-                                .toUpperCase()
-                                .trim() ===
-                            waitingStatus
-                    )
+                                .trim()
+                                .toUpperCase();
 
-                    : [];
+
+                        return (
+                            status ===
+                            waitingStatus
+                        );
+
+                    }
+                );
 
 
             setRequests(
-                waitingApproval
+                filtered
             );
 
 
         } catch (error) {
 
             console.error(
-                "Load approval error:",
+                "LOAD APPROVAL ERROR:",
                 error
+            );
+
+
+            showNotification(
+                error.message ||
+                "Gagal mengambil data maintenance.",
+                "error"
             );
 
 
             setRequests([]);
 
 
-            showAlert(
-                error.message,
-                "error"
-            );
-
-
         } finally {
 
             setLoading(false);
+
+            setRefreshing(false);
 
         }
 
     };
 
 
-    // =====================================================
-    // LOAD SAAT HALAMAN DIBUKA
-    // =====================================================
+    // ==================================================
+    // LOAD PERTAMA
+    // ==================================================
 
     useEffect(() => {
 
-        loadRequests();
+        if (
+            isSupervisor ||
+            isManager
+        ) {
+
+            loadRequests();
+
+        } else {
+
+            setLoading(false);
+
+        }
 
     }, [role]);
 
 
-    // =====================================================
+    // ==================================================
     // UPDATE STATUS
-    // =====================================================
+    // ==================================================
 
     const updateStatus = async (
         id,
-        status
+        newStatus
     ) => {
 
         try {
@@ -301,109 +306,190 @@ function Approval() {
             setProcessingId(id);
 
 
+            console.log(
+                "================================"
+            );
+
+            console.log(
+                "APPROVAL UPDATE"
+            );
+
+            console.log(
+                "Maintenance ID:",
+                id
+            );
+
+            console.log(
+                "Role:",
+                role
+            );
+
+            console.log(
+                "Status baru:",
+                newStatus
+            );
+
+            console.log(
+                "================================"
+            );
+
+
             const response =
                 await fetch(
                     `${API}/api/maintenance/${id}/status`,
                     {
-
                         method: "PUT",
 
                         headers: {
-
                             "Content-Type":
                                 "application/json"
-
                         },
 
                         body:
                             JSON.stringify({
-                                status: status
+                                status:
+                                    newStatus
                             })
-
                     }
                 );
 
 
-            const result =
-                await response.json();
+            // ==========================================
+            // BACA RESPONSE
+            // ==========================================
 
+            let result = null;
+
+            try {
+
+                result =
+                    await response.json();
+
+            } catch {
+
+                result = null;
+
+            }
+
+
+            console.log(
+                "Backend response:",
+                result
+            );
+
+
+            // ==========================================
+            // ERROR DARI BACKEND
+            // ==========================================
 
             if (!response.ok) {
 
+                const backendError =
+                    result?.error ||
+                    result?.message ||
+                    `Request gagal dengan status ${response.status}`;
+
+
                 throw new Error(
-                    result.message ||
-                    "Gagal mengubah status request"
+                    backendError
                 );
 
             }
 
 
-            // =========================================
-            // SUPERVISOR APPROVE
-            // =========================================
+            // ==========================================
+            // BERHASIL
+            // ==========================================
+
+            if (
+                !result?.success &&
+                result?.success !== undefined
+            ) {
+
+                throw new Error(
+                    result?.error ||
+                    result?.message ||
+                    "Backend gagal mengubah status."
+                );
+
+            }
+
+
+            // ==========================================
+            // SUPERVISOR
+            // ==========================================
 
             if (
                 isSupervisor &&
-                status ===
+                newStatus ===
                     "WAITING_MANAGER_APPROVAL"
             ) {
 
-                showAlert(
-                    "Request berhasil disetujui Supervisor dan diteruskan ke Manager.",
+                showNotification(
+                    `Maintenance #${id} berhasil disetujui Supervisor dan diteruskan ke Manager.`,
                     "success"
                 );
 
             }
 
 
-            // =========================================
-            // MANAGER APPROVE
-            // =========================================
+            // ==========================================
+            // MANAGER
+            // ==========================================
 
             else if (
                 isManager &&
-                status === "APPROVED"
+                newStatus ===
+                    "APPROVED"
             ) {
 
-                showAlert(
-                    "Request berhasil disetujui Manager.",
+                showNotification(
+                    `Maintenance #${id} berhasil disetujui Manager.`,
                     "success"
                 );
 
             }
 
 
-            // =========================================
+            // ==========================================
             // REJECT
-            // =========================================
+            // ==========================================
 
             else if (
-                status === "REJECTED"
+                newStatus ===
+                "REJECTED"
             ) {
 
-                showAlert(
-                    "Maintenance request berhasil ditolak.",
+                showNotification(
+                    `Maintenance #${id} berhasil ditolak.`,
                     "success"
                 );
 
             }
 
 
-            // Refresh data
+            // ==========================================
+            // REFRESH
+            // ==========================================
 
-            await loadRequests();
+            await loadRequests(false);
 
 
         } catch (error) {
 
             console.error(
-                "Update approval error:",
+                "UPDATE APPROVAL ERROR:",
                 error
             );
 
 
-            showAlert(
-                error.message,
+            // ==========================================
+            // TAMPILKAN ERROR ASLI
+            // ==========================================
+
+            showNotification(
+                error.message ||
+                "Gagal mengubah status maintenance.",
                 "error"
             );
 
@@ -419,79 +505,144 @@ function Approval() {
     };
 
 
-    // =====================================================
+    // ==================================================
     // SUPERVISOR APPROVE
-    // =====================================================
+    // ==================================================
 
     const handleSupervisorApprove = (
-        id
+        item
     ) => {
 
-        const confirmApprove =
-            window.confirm(
-                "Apakah kamu yakin ingin menyetujui request ini dan meneruskannya ke Manager?"
+        if (
+            !item ||
+            !item.id
+        ) {
+
+            showNotification(
+                "ID maintenance tidak ditemukan.",
+                "error"
             );
-
-
-        if (!confirmApprove) {
 
             return;
 
         }
 
 
+        const confirmed =
+            window.confirm(
+                `Approve maintenance #${item.id}?\n\nRequest akan diteruskan ke Manager.`
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        // ==========================================
+        // PENTING
+        //
+        // Supervisor:
+        //
+        // PENDING_SUPERVISOR
+        //          ↓
+        // WAITING_MANAGER_APPROVAL
+        // ==========================================
+
         updateStatus(
-            id,
+            item.id,
             "WAITING_MANAGER_APPROVAL"
         );
 
     };
 
 
-    // =====================================================
+    // ==================================================
     // MANAGER APPROVE
-    // =====================================================
+    // ==================================================
 
     const handleManagerApprove = (
-        id
+        item
     ) => {
 
-        const confirmApprove =
-            window.confirm(
-                "Apakah kamu yakin ingin menyetujui maintenance request ini?"
+        if (
+            !item ||
+            !item.id
+        ) {
+
+            showNotification(
+                "ID maintenance tidak ditemukan.",
+                "error"
             );
-
-
-        if (!confirmApprove) {
 
             return;
 
         }
 
 
+        const confirmed =
+            window.confirm(
+                `Approve maintenance #${item.id}?\n\nRequest akan menjadi APPROVED.`
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        // ==========================================
+        // PENTING
+        //
+        // Manager:
+        //
+        // WAITING_MANAGER_APPROVAL
+        //          ↓
+        // APPROVED
+        // ==========================================
+
         updateStatus(
-            id,
+            item.id,
             "APPROVED"
         );
 
     };
 
 
-    // =====================================================
+    // ==================================================
     // REJECT
-    // =====================================================
+    // ==================================================
 
     const handleReject = (
-        id
+        item
     ) => {
 
-        const confirmReject =
+        if (
+            !item ||
+            !item.id
+        ) {
+
+            showNotification(
+                "ID maintenance tidak ditemukan.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const confirmed =
             window.confirm(
-                "Apakah kamu yakin ingin menolak maintenance request ini?"
+                `Tolak maintenance #${item.id}?\n\nRequest akan menjadi REJECTED.`
             );
 
 
-        if (!confirmReject) {
+        if (!confirmed) {
 
             return;
 
@@ -499,40 +650,147 @@ function Approval() {
 
 
         updateStatus(
-            id,
+            item.id,
             "REJECTED"
         );
 
     };
 
 
-    // =====================================================
+    // ==================================================
+    // REFRESH BUTTON
+    // ==================================================
+
+    const handleRefresh = () => {
+
+        loadRequests(false);
+
+    };
+
+
+    // ==================================================
     // FORMAT DATE
-    // =====================================================
+    // ==================================================
 
     const formatDate = (
-        date
+        value
     ) => {
 
-        if (!date) {
+        if (!value) {
 
             return "-";
 
         }
 
 
-        return new Date(
-            date
-        ).toLocaleString(
-            "id-ID"
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return "-";
+
+        }
+
+
+        return date.toLocaleString(
+            "id-ID",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
         );
 
     };
 
 
-    // =====================================================
-    // ROLE TIDAK DIKENALI
-    // =====================================================
+    // ==================================================
+    // PRIORITY CLASS
+    // ==================================================
+
+    const getPriorityClass = (
+        priority
+    ) => {
+
+        return String(
+            priority || "MEDIUM"
+        )
+            .toLowerCase();
+
+    };
+
+
+    // ==================================================
+    // STATUS CLASS
+    // ==================================================
+
+    const getStatusClass = (
+        status
+    ) => {
+
+        const normalized =
+            String(
+                status || ""
+            )
+                .toLowerCase();
+
+
+        if (
+            normalized ===
+            "pending_supervisor"
+        ) {
+
+            return "waiting";
+
+        }
+
+
+        if (
+            normalized ===
+            "waiting_manager_approval"
+        ) {
+
+            return "waiting";
+
+        }
+
+
+        if (
+            normalized ===
+            "approved"
+        ) {
+
+            return "approved";
+
+        }
+
+
+        if (
+            normalized ===
+            "rejected"
+        ) {
+
+            return "rejected";
+
+        }
+
+
+        return "";
+
+    };
+
+
+    // ==================================================
+    // ROLE TIDAK VALID
+    // ==================================================
 
     if (
         !isSupervisor &&
@@ -548,16 +806,13 @@ function Approval() {
                 <div
                     className="approval-content-card"
                     style={{
-                        padding:
-                            "50px",
-                        textAlign:
-                            "center"
+                        padding: "60px",
+                        textAlign: "center"
                     }}
                 >
 
                     <ShieldCheck
                         size={50}
-                        color="#64748b"
                     />
 
 
@@ -567,9 +822,9 @@ function Approval() {
 
 
                     <p>
-                        Halaman approval hanya
-                        dapat digunakan oleh
-                        Supervisor dan Manager.
+                        Halaman ini hanya dapat
+                        digunakan oleh Supervisor
+                        dan Manager.
                     </p>
 
                 </div>
@@ -581,9 +836,9 @@ function Approval() {
     }
 
 
-    // =====================================================
+    // ==================================================
     // RENDER
-    // =====================================================
+    // ==================================================
 
     return (
 
@@ -591,10 +846,9 @@ function Approval() {
             className="approval-page"
         >
 
-
-            {/* =================================================
+            {/* =========================================
                 HEADER
-            ================================================= */}
+            ========================================== */}
 
             <div
                 className="approval-page-header"
@@ -615,64 +869,59 @@ function Approval() {
 
                     <h1>
 
-                        {getPageTitle()}
+                        {isSupervisor
+                            ? "Supervisor Approval"
+                            : "Manager Approval"}
 
                     </h1>
 
 
                     <p>
 
-                        {getPageDescription()}
+                        {isSupervisor
+
+                            ? "Review dan setujui maintenance request sebelum diteruskan ke manager."
+
+                            : "Review maintenance request yang telah disetujui supervisor."
+                        }
 
                     </p>
 
                 </div>
 
 
-                {/* ROLE BADGE */}
+                {/* ROLE */}
 
                 <div
                     style={{
-                        display:
-                            "flex",
-
-                        alignItems:
-                            "center",
-
-                        gap:
-                            "10px",
-
-                        padding:
-                            "12px 18px",
-
-                        borderRadius:
-                            "12px",
-
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "14px 24px",
+                        borderRadius: "16px",
                         background:
                             isSupervisor
                                 ? "#eff6ff"
                                 : "#f5f3ff",
-
                         color:
                             isSupervisor
                                 ? "#2563eb"
                                 : "#7c3aed",
-
-                        fontWeight:
-                            "600"
+                        fontWeight: "700",
+                        fontSize: "18px"
                     }}
                 >
 
                     {isSupervisor ? (
 
                         <UserCheck
-                            size={20}
+                            size={24}
                         />
 
                     ) : (
 
                         <ShieldCheck
-                            size={20}
+                            size={24}
                         />
 
                     )}
@@ -687,32 +936,58 @@ function Approval() {
             </div>
 
 
-            {/* =================================================
-                ALERT
-            ================================================= */}
+            {/* =========================================
+                NOTIFICATION
+            ========================================== */}
 
-            {message && (
+            {notification && (
 
                 <div
                     className={
-                        `approval-alert ${messageType}`
+                        notification.type === "error"
+                            ? "approval-alert error"
+                            : "approval-alert success"
                     }
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                    }}
                 >
 
-                    {message}
+                    {notification.type === "error" ? (
+
+                        <AlertCircle
+                            size={22}
+                        />
+
+                    ) : (
+
+                        <CheckCircle
+                            size={22}
+                        />
+
+                    )}
+
+
+                    <span>
+                        {notification.message}
+                    </span>
 
                 </div>
 
             )}
 
 
-            {/* =================================================
+            {/* =========================================
                 SUMMARY
-            ================================================= */}
+            ========================================== */}
 
             <div
                 className="approval-summary"
             >
+
+                {/* WAITING */}
 
                 <div
                     className="approval-summary-card"
@@ -723,7 +998,7 @@ function Approval() {
                     >
 
                         <Clock
-                            size={20}
+                            size={25}
                         />
 
                     </div>
@@ -753,7 +1028,7 @@ function Approval() {
                 </div>
 
 
-                {/* ROLE FLOW */}
+                {/* CURRENT ROLE */}
 
                 <div
                     className="approval-summary-card"
@@ -766,13 +1041,13 @@ function Approval() {
                         {isSupervisor ? (
 
                             <UserCheck
-                                size={20}
+                                size={25}
                             />
 
                         ) : (
 
                             <ShieldCheck
-                                size={20}
+                                size={25}
                             />
 
                         )}
@@ -789,8 +1064,7 @@ function Approval() {
 
                         <strong
                             style={{
-                                fontSize:
-                                    "16px"
+                                fontSize: "20px"
                             }}
                         >
 
@@ -807,157 +1081,190 @@ function Approval() {
             </div>
 
 
-            {/* =================================================
+            {/* =========================================
                 APPROVAL FLOW
-            ================================================= */}
+            ========================================== */}
 
             <div
                 style={{
-                    display:
-                        "flex",
-
-                    alignItems:
-                        "center",
-
-                    justifyContent:
-                        "center",
-
-                    gap:
-                        "12px",
-
-                    margin:
-                        "20px 0 25px",
-
-                    flexWrap:
-                        "wrap"
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "14px",
+                    margin: "25px 0",
+                    flexWrap: "wrap"
                 }}
             >
 
+                {/* ENGINEER */}
+
                 <div
                     style={{
-                        padding:
-                            "10px 16px",
-
-                        borderRadius:
-                            "10px",
-
-                        background:
-                            "#f8fafc",
-
+                        padding: "14px 24px",
+                        borderRadius: "12px",
                         border:
-                            "1px solid #e2e8f0",
-
-                        fontWeight:
-                            "600"
+                            "1px solid #dbe3ef",
+                        background: "#ffffff",
+                        fontWeight: "700",
+                        fontSize: "18px"
                     }}
                 >
+
                     Engineer
+
                 </div>
 
 
-                <span>
+                <span
+                    style={{
+                        fontSize: "24px"
+                    }}
+                >
                     →
                 </span>
 
 
+                {/* SUPERVISOR */}
+
                 <div
                     style={{
-                        padding:
-                            "10px 16px",
-
-                        borderRadius:
-                            "10px",
-
-                        background:
-                            isSupervisor
-                                ? "#eff6ff"
-                                : "#f8fafc",
-
+                        padding: "14px 24px",
+                        borderRadius: "12px",
                         border:
                             "1px solid #bfdbfe",
-
-                        color:
-                            "#2563eb",
-
-                        fontWeight:
-                            "600"
+                        background: "#eff6ff",
+                        color: "#2563eb",
+                        fontWeight: "700",
+                        fontSize: "18px"
                     }}
                 >
+
                     Supervisor
+
                 </div>
 
 
-                <span>
+                <span
+                    style={{
+                        fontSize: "24px"
+                    }}
+                >
                     →
                 </span>
 
 
+                {/* MANAGER */}
+
                 <div
                     style={{
-                        padding:
-                            "10px 16px",
-
-                        borderRadius:
-                            "10px",
-
-                        background:
-                            isManager
-                                ? "#f5f3ff"
-                                : "#f8fafc",
-
+                        padding: "14px 24px",
+                        borderRadius: "12px",
                         border:
                             "1px solid #ddd6fe",
-
-                        color:
-                            "#7c3aed",
-
-                        fontWeight:
-                            "600"
+                        background: "#f5f3ff",
+                        color: "#7c3aed",
+                        fontWeight: "700",
+                        fontSize: "18px"
                     }}
                 >
+
                     Manager
+
                 </div>
 
 
-                <span>
+                <span
+                    style={{
+                        fontSize: "24px"
+                    }}
+                >
                     →
                 </span>
 
 
+                {/* APPROVED */}
+
                 <div
                     style={{
-                        padding:
-                            "10px 16px",
-
-                        borderRadius:
-                            "10px",
-
-                        background:
-                            "#f0fdf4",
-
+                        padding: "14px 24px",
+                        borderRadius: "12px",
                         border:
                             "1px solid #bbf7d0",
-
-                        color:
-                            "#16a34a",
-
-                        fontWeight:
-                            "600"
+                        background: "#f0fdf4",
+                        color: "#16a34a",
+                        fontWeight: "700",
+                        fontSize: "18px"
                     }}
                 >
+
                     Approved
+
                 </div>
 
             </div>
 
 
-            {/* =================================================
+            {/* =========================================
                 TABLE
-            ================================================= */}
+            ========================================== */}
 
             <div
                 className="approval-content-card"
             >
+
+                {/* TABLE HEADER */}
+
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        padding: "15px 20px",
+                        borderBottom:
+                            "1px solid #e5e7eb"
+                    }}
+                >
+
+                    <button
+                        type="button"
+                        onClick={
+                            handleRefresh
+                        }
+                        disabled={
+                            refreshing ||
+                            loading
+                        }
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            border: "none",
+                            background: "#eff6ff",
+                            color: "#2563eb",
+                            padding:
+                                "10px 16px",
+                            borderRadius: "10px",
+                            cursor:
+                                "pointer",
+                            fontWeight: "600"
+                        }}
+                    >
+
+                        <RefreshCw
+                            size={16}
+                            style={{
+                                animation:
+                                    refreshing
+                                        ? "spin 1s linear infinite"
+                                        : "none"
+                            }}
+                        />
+
+                        Refresh
+
+                    </button>
+
+                </div>
+
 
                 <div
                     className="approval-table-wrap"
@@ -1010,8 +1317,9 @@ function Approval() {
 
                         <tbody>
 
-
-                            {/* LOADING */}
+                            {/* =================================
+                                LOADING
+                            ================================== */}
 
                             {loading ? (
 
@@ -1022,7 +1330,19 @@ function Approval() {
                                         className="approval-table-message"
                                     >
 
-                                        Memuat data...
+                                        <div
+                                            className="approval-empty"
+                                        >
+
+                                            <Clock
+                                                size={35}
+                                            />
+
+                                            <strong>
+                                                Memuat data...
+                                            </strong>
+
+                                        </div>
 
                                     </td>
 
@@ -1030,8 +1350,9 @@ function Approval() {
 
                             ) : requests.length === 0 ? (
 
-
-                                /* EMPTY */
+                                /* =================================
+                                    EMPTY
+                                ================================== */
 
                                 <tr>
 
@@ -1045,7 +1366,7 @@ function Approval() {
                                         >
 
                                             <CheckCircle
-                                                size={32}
+                                                size={40}
                                             />
 
 
@@ -1057,8 +1378,11 @@ function Approval() {
                                             <span>
 
                                                 {isSupervisor
+
                                                     ? "Tidak ada maintenance request yang menunggu approval Supervisor."
-                                                    : "Tidak ada maintenance request yang menunggu approval Manager."}
+
+                                                    : "Tidak ada maintenance request yang menunggu approval Manager."
+                                                }
 
                                             </span>
 
@@ -1070,268 +1394,289 @@ function Approval() {
 
                             ) : (
 
-
-                                /* DATA */
+                                /* =================================
+                                    DATA
+                                ================================== */
 
                                 requests.map(
-                                    (item) => (
+                                    (item) => {
 
-                                        <tr
-                                            key={
-                                                item.id
-                                            }
-                                        >
+                                        const isProcessing =
+                                            processingId ===
+                                            item.id;
 
 
-                                            {/* ID */}
+                                        return (
 
-                                            <td>
+                                            <tr
+                                                key={
+                                                    item.id
+                                                }
+                                            >
 
-                                                <strong>
-                                                    #{item.id}
-                                                </strong>
+                                                {/* ID */}
 
-                                            </td>
+                                                <td>
+
+                                                    <strong>
+                                                        #{item.id}
+                                                    </strong>
+
+                                                </td>
 
 
-                                            {/* EQUIPMENT */}
+                                                {/* EQUIPMENT */}
 
-                                            <td>
-
-                                                <div
-                                                    className="approval-equipment"
-                                                >
+                                                <td>
 
                                                     <div
-                                                        className="approval-equipment-icon"
+                                                        style={{
+                                                            display:
+                                                                "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap:
+                                                                "12px"
+                                                        }}
                                                     >
 
-                                                        <Wrench
-                                                            size={14}
-                                                        />
+                                                        <div
+                                                            style={{
+                                                                width:
+                                                                    "48px",
+                                                                height:
+                                                                    "48px",
+                                                                display:
+                                                                    "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                                background:
+                                                                    "#eff6ff",
+                                                                borderRadius:
+                                                                    "12px",
+                                                                color:
+                                                                    "#2563eb"
+                                                            }}
+                                                        >
 
-                                                    </div>
+                                                            <Wrench
+                                                                size={22}
+                                                            />
 
+                                                        </div>
 
-                                                    <div>
 
                                                         <strong>
+
                                                             Equipment #
+
                                                             {
                                                                 item.equipment_id
                                                             }
+
                                                         </strong>
 
                                                     </div>
 
-                                                </div>
-
-                                            </td>
+                                                </td>
 
 
-                                            {/* ENGINEER */}
+                                                {/* ENGINEER */}
 
-                                            <td>
+                                                <td>
 
-                                                Engineer #
-
-                                                {
-                                                    item.engineer_id
-                                                }
-
-                                            </td>
-
-
-                                            {/* DESCRIPTION */}
-
-                                            <td>
-
-                                                {
-                                                    item.description ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-
-                                            {/* PRIORITY */}
-
-                                            <td>
-
-                                                <span
-                                                    className={
-                                                        `approval-priority ${
-                                                            String(
-                                                                item.priority ||
-                                                                ""
-                                                            ).toLowerCase()
-                                                        }`
-                                                    }
-                                                >
+                                                    Engineer #
 
                                                     {
-                                                        item.priority ||
+                                                        item.engineer_id
+                                                    }
+
+                                                </td>
+
+
+                                                {/* DESCRIPTION */}
+
+                                                <td>
+
+                                                    {
+                                                        item.description ||
                                                         "-"
                                                     }
 
-                                                </span>
-
-                                            </td>
+                                                </td>
 
 
-                                            {/* STATUS */}
+                                                {/* PRIORITY */}
 
-                                            <td>
+                                                <td>
 
-                                                <span
-                                                    className={
-                                                        `approval-status waiting`
-                                                    }
-                                                >
-
-                                                    <Clock
-                                                        size={13}
-                                                    />
-
-
-                                                    {
-                                                        item.status
-                                                    }
-
-                                                </span>
-
-                                            </td>
-
-
-                                            {/* DATE */}
-
-                                            <td>
-
-                                                {
-                                                    formatDate(
-                                                        item.created_at
-                                                    )
-                                                }
-
-                                            </td>
-
-
-                                            {/* ACTION */}
-
-                                            <td>
-
-                                                <div
-                                                    className="approval-actions"
-                                                >
-
-
-                                                    {/* SUPERVISOR */}
-
-                                                    {isSupervisor && (
-
-                                                        <button
-
-                                                            type="button"
-
-                                                            className="approve-btn"
-
-                                                            disabled={
-                                                                processingId ===
-                                                                item.id
-                                                            }
-
-                                                            onClick={() =>
-                                                                handleSupervisorApprove(
-                                                                    item.id
-                                                                )
-                                                            }
-                                                        >
-
-                                                            <CheckCircle
-                                                                size={15}
-                                                            />
-
-                                                            {processingId ===
-                                                            item.id
-                                                                ? "Processing..."
-                                                                : "Approve"}
-
-                                                        </button>
-
-                                                    )}
-
-
-                                                    {/* MANAGER */}
-
-                                                    {isManager && (
-
-                                                        <button
-
-                                                            type="button"
-
-                                                            className="approve-btn"
-
-                                                            disabled={
-                                                                processingId ===
-                                                                item.id
-                                                            }
-
-                                                            onClick={() =>
-                                                                handleManagerApprove(
-                                                                    item.id
-                                                                )
-                                                            }
-                                                        >
-
-                                                            <CheckCircle
-                                                                size={15}
-                                                            />
-
-                                                            {processingId ===
-                                                            item.id
-                                                                ? "Processing..."
-                                                                : "Approve"}
-
-                                                        </button>
-
-                                                    )}
-
-
-                                                    {/* REJECT */}
-
-                                                    <button
-
-                                                        type="button"
-
-                                                        className="reject-btn"
-
-                                                        disabled={
-                                                            processingId ===
-                                                            item.id
-                                                        }
-
-                                                        onClick={() =>
-                                                            handleReject(
-                                                                item.id
-                                                            )
+                                                    <span
+                                                        className={
+                                                            `approval-priority ${getPriorityClass(
+                                                                item.priority
+                                                            )}`
                                                         }
                                                     >
 
-                                                        <XCircle
-                                                            size={15}
+                                                        {
+                                                            item.priority ||
+                                                            "MEDIUM"
+                                                        }
+
+                                                    </span>
+
+                                                </td>
+
+
+                                                {/* STATUS */}
+
+                                                <td>
+
+                                                    <span
+                                                        className={
+                                                            `approval-status ${getStatusClass(
+                                                                item.status
+                                                            )}`
+                                                        }
+                                                    >
+
+                                                        <Clock
+                                                            size={14}
                                                         />
 
-                                                        Reject
 
-                                                    </button>
+                                                        {
+                                                            item.status
+                                                        }
 
-                                                </div>
+                                                    </span>
 
-                                            </td>
+                                                </td>
 
-                                        </tr>
 
-                                    )
+                                                {/* DATE */}
+
+                                                <td>
+
+                                                    {
+                                                        formatDate(
+                                                            item.created_at
+                                                        )
+                                                    }
+
+                                                </td>
+
+
+                                                {/* ACTION */}
+
+                                                <td>
+
+                                                    <div
+                                                        className="approval-actions"
+                                                    >
+
+                                                        {/* =================================
+                                                            APPROVE SUPERVISOR
+                                                        ================================== */}
+
+                                                        {isSupervisor && (
+
+                                                            <button
+                                                                type="button"
+                                                                className="approve-btn"
+                                                                disabled={
+                                                                    isProcessing
+                                                                }
+                                                                onClick={() =>
+                                                                    handleSupervisorApprove(
+                                                                        item
+                                                                    )
+                                                                }
+                                                            >
+
+                                                                <CheckCircle
+                                                                    size={17}
+                                                                />
+
+
+                                                                {isProcessing
+                                                                    ? "Processing..."
+                                                                    : "Approve"}
+
+                                                            </button>
+
+                                                        )}
+
+
+                                                        {/* =================================
+                                                            APPROVE MANAGER
+                                                        ================================== */}
+
+                                                        {isManager && (
+
+                                                            <button
+                                                                type="button"
+                                                                className="approve-btn"
+                                                                disabled={
+                                                                    isProcessing
+                                                                }
+                                                                onClick={() =>
+                                                                    handleManagerApprove(
+                                                                        item
+                                                                    )
+                                                                }
+                                                            >
+
+                                                                <CheckCircle
+                                                                    size={17}
+                                                                />
+
+
+                                                                {isProcessing
+                                                                    ? "Processing..."
+                                                                    : "Approve"}
+
+                                                            </button>
+
+                                                        )}
+
+
+                                                        {/* =================================
+                                                            REJECT
+                                                        ================================== */}
+
+                                                        <button
+                                                            type="button"
+                                                            className="reject-btn"
+                                                            disabled={
+                                                                isProcessing
+                                                            }
+                                                            onClick={() =>
+                                                                handleReject(
+                                                                    item
+                                                                )
+                                                            }
+                                                        >
+
+                                                            <XCircle
+                                                                size={17}
+                                                            />
+
+                                                            Reject
+
+                                                        </button>
+
+                                                    </div>
+
+                                                </td>
+
+                                            </tr>
+
+                                        );
+
+                                    }
                                 )
 
                             )}
@@ -1343,6 +1688,31 @@ function Approval() {
                 </div>
 
             </div>
+
+
+            {/* =========================================
+                INLINE STYLE UNTUK SPIN
+            ========================================== */}
+
+            <style>
+
+                {`
+
+                    @keyframes spin {
+
+                        from {
+                            transform: rotate(0deg);
+                        }
+
+                        to {
+                            transform: rotate(360deg);
+                        }
+
+                    }
+
+                `}
+
+            </style>
 
         </div>
 

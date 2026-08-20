@@ -1,15 +1,15 @@
-const express = require('express');
+const express = require("express");
 
 const router = express.Router();
 
-const db = require('../db');
+const db = require("../db");
 
 
-// ========================================
-// GET - Semua Maintenance Request
-// ========================================
+// ======================================================
+// GET ALL MAINTENANCE
+// ======================================================
 
-router.get('/', (req, res) => {
+router.get("/", (req, res) => {
 
     const sql = `
         SELECT *
@@ -24,13 +24,18 @@ router.get('/', (req, res) => {
 
             if (err) {
 
-                console.error(err);
+                console.error(
+                    "GET MAINTENANCE ERROR:",
+                    err
+                );
 
 
                 return res.status(500).json({
 
+                    success: false,
+
                     message:
-                        'Gagal mengambil maintenance request',
+                        "Gagal mengambil data maintenance",
 
                     error:
                         err.message
@@ -48,11 +53,12 @@ router.get('/', (req, res) => {
 });
 
 
-// ========================================
-// POST - Tambah Maintenance Request
-// ========================================
+// ======================================================
+// CREATE MAINTENANCE REQUEST
+// ENGINEER → PENDING_SUPERVISOR
+// ======================================================
 
-router.post('/', (req, res) => {
+router.post("/", (req, res) => {
 
     const {
         equipment_id,
@@ -62,7 +68,9 @@ router.post('/', (req, res) => {
     } = req.body;
 
 
-    // Validasi
+    // -----------------------------------------------
+    // VALIDATION
+    // -----------------------------------------------
 
     if (
         !equipment_id ||
@@ -72,13 +80,19 @@ router.post('/', (req, res) => {
 
         return res.status(400).json({
 
+            success: false,
+
             message:
-                'equipment_id, engineer_id, dan description wajib diisi'
+                "equipment_id, engineer_id, dan description wajib diisi"
 
         });
 
     }
 
+
+    // -----------------------------------------------
+    // INSERT
+    // -----------------------------------------------
 
     const sql = `
         INSERT INTO maintenance_requests
@@ -86,9 +100,10 @@ router.post('/', (req, res) => {
             equipment_id,
             engineer_id,
             description,
-            priority
+            priority,
+            status
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     `;
 
 
@@ -100,7 +115,9 @@ router.post('/', (req, res) => {
 
         description,
 
-        priority || 'MEDIUM'
+        priority || "MEDIUM",
+
+        "PENDING_SUPERVISOR"
 
     ];
 
@@ -112,13 +129,18 @@ router.post('/', (req, res) => {
 
             if (err) {
 
-                console.error(err);
+                console.error(
+                    "CREATE MAINTENANCE ERROR:",
+                    err
+                );
 
 
                 return res.status(500).json({
 
+                    success: false,
+
                     message:
-                        'Gagal membuat maintenance request',
+                        "Gagal membuat maintenance request",
 
                     error:
                         err.message
@@ -130,11 +152,16 @@ router.post('/', (req, res) => {
 
             res.status(201).json({
 
+                success: true,
+
                 message:
-                    'Maintenance request berhasil dibuat',
+                    "Maintenance request berhasil dibuat",
 
                 id:
-                    result.insertId
+                    result.insertId,
+
+                status:
+                    "PENDING_SUPERVISOR"
 
             });
 
@@ -144,117 +171,377 @@ router.post('/', (req, res) => {
 });
 
 
-// ========================================
-// PUT - Update Status Maintenance
-// ========================================
+// ======================================================
+// UPDATE STATUS
+//
+// ENGINEER
+//    ↓
+// PENDING_SUPERVISOR
+//    ↓
+// SUPERVISOR
+//    ↓
+// WAITING_MANAGER_APPROVAL
+//    ↓
+// MANAGER
+//    ↓
+// APPROVED
+// ======================================================
 
-router.put('/:id/status', (req, res) => {
+router.put("/:id/status", (req, res) => {
 
-    const { id } = req.params;
+    const {
+        id
+    } = req.params;
 
-    const { status } = req.body;
+
+    const {
+        status
+    } = req.body;
 
 
-    // Status yang diperbolehkan
+    console.log("");
+    console.log("========================================");
+    console.log("APPROVAL REQUEST");
+    console.log("========================================");
+    console.log(
+        "Maintenance ID :",
+        id
+    );
+    console.log(
+        "Status baru    :",
+        status
+    );
+    console.log("========================================");
+
+
+    // ==================================================
+    // STATUS YANG DIPERBOLEHKAN
+    // ==================================================
 
     const allowedStatuses = [
 
-        'PENDING_SUPERVISOR',
+        "PENDING_SUPERVISOR",
 
-        'WAITING_MANAGER_APPROVAL',
+        "WAITING_MANAGER_APPROVAL",
 
-        'APPROVED',
+        "APPROVED",
 
-        'REJECTED'
+        "REJECTED"
 
     ];
 
 
-    // Validasi status
-
-    if (
-        !status ||
-        !allowedStatuses.includes(status)
-    ) {
+    if (!status) {
 
         return res.status(400).json({
 
-            message:
-                'Status tidak valid',
+            success: false,
 
-            allowedStatuses
+            message:
+                "Status wajib diisi"
 
         });
 
     }
 
 
-    const sql = `
-        UPDATE maintenance_requests
-        SET status = ?
+    if (
+        !allowedStatuses.includes(status)
+    ) {
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                "Status tidak valid",
+
+            received:
+                status,
+
+            allowed:
+                allowedStatuses
+
+        });
+
+    }
+
+
+    // ==================================================
+    // AMBIL STATUS SEKARANG
+    // ==================================================
+
+    const selectSql = `
+        SELECT
+            id,
+            status
+        FROM maintenance_requests
         WHERE id = ?
     `;
 
 
     db.query(
-        sql,
-        [status, id],
-        (err, result) => {
+        selectSql,
+        [id],
+        (selectError, rows) => {
 
-            if (err) {
+            if (selectError) {
 
                 console.error(
-                    'UPDATE STATUS ERROR:',
-                    err
+                    "SELECT STATUS ERROR:",
+                    selectError
                 );
 
 
                 return res.status(500).json({
 
+                    success: false,
+
                     message:
-                        'Gagal mengubah status maintenance',
+                        "Gagal membaca status maintenance",
 
                     error:
-                        err.message
+                        selectError.message
 
                 });
 
             }
 
 
+            // ------------------------------------------
+            // DATA TIDAK ADA
+            // ------------------------------------------
+
             if (
-                result.affectedRows === 0
+                !rows ||
+                rows.length === 0
             ) {
 
                 return res.status(404).json({
 
+                    success: false,
+
                     message:
-                        'Maintenance request tidak ditemukan'
+                        "Maintenance request tidak ditemukan"
 
                 });
 
             }
 
 
-            res.json({
+            const currentStatus =
+                String(
+                    rows[0].status || ""
+                )
+                    .trim()
+                    .toUpperCase();
 
-                success: true,
 
-                message:
-                    'Status maintenance berhasil diubah',
+            console.log(
+                "Status sekarang :",
+                currentStatus
+            );
 
-                id:
-                    Number(id),
 
-                status:
-                    status
+            // ==================================================
+            // SUPERVISOR APPROVE
+            //
+            // PENDING_SUPERVISOR
+            //          ↓
+            // WAITING_MANAGER_APPROVAL
+            // ==================================================
 
-            });
+            if (
+                status ===
+                    "WAITING_MANAGER_APPROVAL"
+            ) {
+
+                if (
+                    currentStatus !==
+                    "PENDING_SUPERVISOR"
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            `Supervisor tidak dapat approve. Status sekarang: ${currentStatus}`
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // MANAGER APPROVE
+            //
+            // WAITING_MANAGER_APPROVAL
+            //          ↓
+            // APPROVED
+            // ==================================================
+
+            if (
+                status ===
+                    "APPROVED"
+            ) {
+
+                if (
+                    currentStatus !==
+                    "WAITING_MANAGER_APPROVAL"
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            `Manager tidak dapat approve. Status sekarang: ${currentStatus}`
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // REJECT
+            // ==================================================
+
+            if (
+                status ===
+                    "REJECTED"
+            ) {
+
+                if (
+                    currentStatus !==
+                        "PENDING_SUPERVISOR" &&
+                    currentStatus !==
+                        "WAITING_MANAGER_APPROVAL"
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            `Request tidak dapat ditolak dari status ${currentStatus}`
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // UPDATE DATABASE
+            // ==================================================
+
+            const updateSql = `
+                UPDATE maintenance_requests
+                SET status = ?
+                WHERE id = ?
+            `;
+
+
+            db.query(
+                updateSql,
+                [
+                    status,
+                    id
+                ],
+                (updateError, result) => {
+
+                    if (updateError) {
+
+                        console.error("");
+                        console.error(
+                            "========================================"
+                        );
+                        console.error(
+                            "DATABASE UPDATE ERROR"
+                        );
+                        console.error(
+                            "========================================"
+                        );
+                        console.error(
+                            "Code:",
+                            updateError.code
+                        );
+                        console.error(
+                            "Message:",
+                            updateError.message
+                        );
+                        console.error(
+                            updateError
+                        );
+                        console.error(
+                            "========================================"
+                        );
+
+
+                        return res.status(500).json({
+
+                            success: false,
+
+                            message:
+                                "Gagal mengubah status maintenance",
+
+                            error:
+                                updateError.message,
+
+                            code:
+                                updateError.code
+
+                        });
+
+                    }
+
+
+                    // ------------------------------------------
+                    // BERHASIL
+                    // ------------------------------------------
+
+                    console.log("");
+                    console.log(
+                        `Maintenance #${id}: ${currentStatus} → ${status}`
+                    );
+                    console.log("");
+
+
+                    return res.json({
+
+                        success: true,
+
+                        message:
+                            "Status maintenance berhasil diubah",
+
+                        id:
+                            Number(id),
+
+                        previous_status:
+                            currentStatus,
+
+                        status:
+                            status
+
+                    });
+
+                }
+            );
 
         }
     );
 
 });
 
+
+// ======================================================
+// EXPORT ROUTER
+// ======================================================
 
 module.exports = router;
