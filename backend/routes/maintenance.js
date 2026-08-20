@@ -103,6 +103,64 @@ router.post("/", (req, res) => {
 
     }
 
+    // ======================================================
+// GET MAINTENANCE HISTORY
+// ======================================================
+
+router.get("/history", (req, res) => {
+
+    const sql = `
+        SELECT
+            mr.id AS maintenance_id,
+            mr.equipment_id,
+            mr.engineer_id,
+            mr.description,
+            mr.priority,
+            mr.status,
+            mr.created_at,
+
+            e.name AS equipment_name,
+
+            u.username AS engineer_name
+
+        FROM maintenance_requests mr
+
+        LEFT JOIN equipment e
+            ON mr.equipment_id = e.id
+
+        LEFT JOIN users u
+            ON mr.engineer_id = u.id
+
+        WHERE mr.status IN (
+            'REJECTED',
+            'APPROVED',
+            'IN_PROGRESS',
+            'COMPLETED'
+        )
+
+        ORDER BY mr.created_at DESC
+    `;
+
+    db.query(sql, (error, results) => {
+
+        if (error) {
+
+            console.error(
+                "GET MAINTENANCE HISTORY ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil maintenance history",
+                error: error.message
+            });
+        }
+
+        return res.json(results);
+    });
+});
+
 
     // ==================================================
     // INSERT
@@ -737,6 +795,52 @@ router.put("/:id/status", (req, res) => {
         }
     );
 
+});
+
+router.get("/history", (req, res) => {
+
+    const sql = `
+        SELECT
+            mr.id AS maintenance_id,
+            mr.equipment_id,
+            mr.engineer_id,
+            mr.description,
+            mr.priority,
+            mr.status,
+            mr.created_at,
+            e.name AS equipment_name,
+            u.username AS engineer_name
+        FROM maintenance_requests mr
+        LEFT JOIN equipment e
+            ON mr.equipment_id = e.id
+        LEFT JOIN users u
+            ON mr.engineer_id = u.id
+        WHERE mr.status IN (
+            'REJECTED',
+            'APPROVED',
+            'IN_PROGRESS',
+            'COMPLETED'
+        )
+        ORDER BY mr.created_at DESC
+    `;
+
+    db.query(sql, (error, results) => {
+
+        if (error) {
+            console.error(
+                "HISTORY ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil history",
+                error: error.message
+            });
+        }
+
+        res.json(results);
+    });
 });
 
 

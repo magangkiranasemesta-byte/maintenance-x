@@ -19,18 +19,36 @@ function History() {
             setLoading(true);
             setError("");
 
-            const response = await fetch(
-                `${API}/api/maintenance/history`
-            );
+           const response = await fetch(
+    `${API}/api/maintenance/history`
+);
 
-            const data = await response.json();
+const contentType =
+    response.headers.get("content-type") || "";
 
-            if (!response.ok) {
-                throw new Error(
-                    data.message || "Gagal mengambil history"
-                );
-            }
+if (!contentType.includes("application/json")) {
 
+    const text = await response.text();
+
+    console.error(
+        "Response bukan JSON:",
+        text
+    );
+
+    throw new Error(
+        `Server mengembalikan response bukan JSON (${response.status})`
+    );
+}
+
+const data = await response.json();
+
+if (!response.ok) {
+
+    throw new Error(
+        data.message ||
+        "Gagal mengambil history"
+    );
+}
             setHistory(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Load history error:", err);
@@ -162,80 +180,103 @@ function History() {
                     </div>
                 ) : (
                     <div className="history-table-wrapper">
-                        <table className="history-table">
 
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>EQUIPMENT</th>
-                                    <th>ENGINEER</th>
-                                    <th>DESCRIPTION</th>
-                                    <th>ACTION</th>
-                                    <th>STATUS</th>
-                                    <th>TANGGAL</th>
-                                </tr>
-                            </thead>
+    <table className="history-table">
 
-                            <tbody>
-                                {history.map((item) => (
-                                    <tr key={item.id}>
+        <thead>
 
-                                        <td>
-                                            {item.maintenance_id}
-                                        </td>
+            <tr>
+                <th>ID</th>
+                <th>EQUIPMENT</th>
+                <th>ENGINEER</th>
+                <th>DESCRIPTION</th>
+                <th>PRIORITY</th>
+                <th>STATUS</th>
+                <th>TANGGAL</th>
+            </tr>
 
-                                        <td>
-                                            <div className="history-equipment">
-                                                <div className="history-equipment-icon">
-                                                    <Wrench size={15} />
-                                                </div>
+        </thead>
 
-                                                <span>
-                                                    {item.equipment_name ||
-                                                        `Equipment #${item.equipment_id}`}
-                                                </span>
-                                            </div>
-                                        </td>
+        <tbody>
 
-                                        <td>
-                                            {item.engineer_name ||
-                                                item.engineer_id ||
-                                                "-"}
-                                        </td>
+            {history.map((item) => (
 
-                                        <td>
-                                            {item.description || "-"}
-                                        </td>
+                <tr key={item.maintenance_id}>
 
-                                        <td>
-                                            {item.action || "-"}
-                                        </td>
+                    <td>
+                        {item.maintenance_id}
+                    </td>
 
-                                        <td>
-                                            <span
-                                                className={`history-status ${getStatusClass(
-                                                    item.status
-                                                )}`}
-                                            >
-                                                {getStatusIcon(item.status)}
+                    <td>
 
-                                                {item.status || "-"}
-                                            </span>
-                                        </td>
+                        <div className="history-equipment">
 
-                                        <td>
-                                            {formatDate(
-                                                item.completed_at ||
-                                                item.created_at
-                                            )}
-                                        </td>
+                            <div className="history-equipment-icon">
 
-                                    </tr>
-                                ))}
-                            </tbody>
+                                <Wrench size={15} />
 
-                        </table>
-                    </div>
+                            </div>
+
+                            <span>
+
+                                {item.equipment_name ||
+                                    `Equipment #${item.equipment_id}`}
+
+                            </span>
+
+                        </div>
+
+                    </td>
+
+                    <td>
+                        {item.engineer_name ||
+                            item.engineer_id ||
+                            "-"}
+                    </td>
+
+                    <td>
+                        {item.description || "-"}
+                    </td>
+
+                    <td>
+                        {item.priority || "-"}
+                    </td>
+
+                    <td>
+
+                        <span
+                            className={`history-status ${getStatusClass(
+                                item.status
+                            )}`}
+                        >
+
+                            {getStatusIcon(
+                                item.status
+                            )}
+
+                            {item.status || "-"}
+
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        {formatDate(
+                            item.created_at
+                        )}
+
+                    </td>
+
+                </tr>
+
+            ))}
+
+        </tbody>
+
+    </table>
+
+</div>
                 )}
 
             </div>
