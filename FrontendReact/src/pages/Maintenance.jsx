@@ -20,6 +20,23 @@ function Maintenance() {
         description: "",
     });
 
+    // =========================
+    // GET USER LOGIN
+    // =========================
+
+    const user = JSON.parse(
+    localStorage.getItem("user") || "null"
+);
+
+console.log("USER LOGIN:", user);
+console.log("ROLE LOGIN:", user?.role);
+
+const userRole = String(
+    user?.role || ""
+).trim().toLowerCase();
+
+console.log("ROLE NORMALIZED:", userRole);
+
 
     // =========================
     // ALERT
@@ -47,13 +64,17 @@ function Maintenance() {
             );
 
             if (!response.ok) {
-                throw new Error("Gagal mengambil equipment");
+                throw new Error(
+                    "Gagal mengambil equipment"
+                );
             }
 
             const data = await response.json();
 
             setEquipment(
-                Array.isArray(data) ? data : []
+                Array.isArray(data)
+                    ? data
+                    : []
             );
 
         } catch (error) {
@@ -91,10 +112,13 @@ function Maintenance() {
                 );
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
             setRequests(
-                Array.isArray(data) ? data : []
+                Array.isArray(data)
+                    ? data
+                    : []
             );
 
         } catch (error) {
@@ -126,9 +150,14 @@ function Maintenance() {
     useEffect(() => {
 
         loadRequests();
-        loadEquipment();
 
-    }, []);
+        // Hanya load equipment jika
+        // user boleh membuat request
+        if (userRole === "engineer") {
+            loadEquipment();
+        }
+
+    }, [userRole]);
 
 
     // =========================
@@ -155,6 +184,11 @@ function Maintenance() {
 
     const openModal = () => {
 
+        // Pengamanan tambahan
+        if (userRole !== "engineer") {
+            return;
+        }
+
         setModalOpen(true);
 
         loadEquipment();
@@ -169,14 +203,29 @@ function Maintenance() {
 
         e.preventDefault();
 
+        // Pengamanan tambahan
+        if (userRole !== "engineer") {
+
+            showAlert(
+                "Anda tidak memiliki akses untuk membuat maintenance request.",
+                "error"
+            );
+
+            return;
+        }
+
         try {
 
             const body = {
                 equipment_id:
-                    Number(formData.equipment_id),
+                    Number(
+                        formData.equipment_id
+                    ),
 
                 engineer_id:
-                    Number(formData.engineer_id),
+                    Number(
+                        formData.engineer_id
+                    ),
 
                 description:
                     formData.description.trim(),
@@ -196,7 +245,8 @@ function Maintenance() {
                             "application/json",
                     },
 
-                    body: JSON.stringify(body),
+                    body:
+                        JSON.stringify(body),
                 }
             );
 
@@ -259,7 +309,9 @@ function Maintenance() {
             return "-";
         }
 
-        return new Date(date).toLocaleDateString(
+        return new Date(
+            date
+        ).toLocaleDateString(
             "id-ID"
         );
     };
@@ -293,16 +345,25 @@ function Maintenance() {
                 </div>
 
 
-                <button
-                    className="primary-btn"
-                    onClick={openModal}
-                >
+                {/* =====================
+                    REQUEST BUTTON
+                    HANYA ENGINEER
+                ====================== */}
 
-                    <Plus size={16} />
+                {userRole === "engineer" && (
 
-                    Request Maintenance
+                    <button
+                        className="primary-btn"
+                        onClick={openModal}
+                    >
 
-                </button>
+                        <Plus size={16} />
+
+                        Request Maintenance
+
+                    </button>
+
+                )}
 
             </header>
 
@@ -399,78 +460,112 @@ function Maintenance() {
 
                             ) : (
 
-                                requests.map((item) => (
+                                requests.map(
+                                    (item) => (
 
-                                    <tr key={item.id}>
+                                        <tr
+                                            key={
+                                                item.id
+                                            }
+                                        >
 
-                                        <td>
-                                            {item.id}
-                                        </td>
+                                            <td>
+                                                {
+                                                    item.id
+                                                }
+                                            </td>
 
 
-                                        <td>
+                                            <td>
 
-                                            <div className="maintenance-equipment">
+                                                <div className="maintenance-equipment">
 
-                                                <div className="maintenance-equipment-icon">
+                                                    <div className="maintenance-equipment-icon">
 
-                                                    <Wrench size={13} />
+                                                        <Wrench
+                                                            size={
+                                                                13
+                                                            }
+                                                        />
+
+                                                    </div>
+
+                                                    <span>
+
+                                                        Equipment #
+
+                                                        {
+                                                            item.equipment_id
+                                                        }
+
+                                                    </span>
 
                                                 </div>
 
-                                                <span>
-                                                    Equipment #
-                                                    {item.equipment_id}
+                                            </td>
+
+
+                                            <td>
+                                                {
+                                                    item.engineer_id
+                                                }
+                                            </td>
+
+
+                                            <td>
+                                                {
+                                                    item.description
+                                                }
+                                            </td>
+
+
+                                            <td>
+
+                                                <span
+                                                    className={`maintenance-priority ${
+                                                        String(
+                                                            item.priority ||
+                                                            ""
+                                                        ).toLowerCase()
+                                                    }`}
+                                                >
+
+                                                    {
+                                                        item.priority
+                                                    }
+
                                                 </span>
 
-                                            </div>
-
-                                        </td>
+                                            </td>
 
 
-                                        <td>
-                                            {item.engineer_id}
-                                        </td>
+                                            <td>
+
+                                                <span className="maintenance-status">
+
+                                                    {
+                                                        item.status
+                                                    }
+
+                                                </span>
+
+                                            </td>
 
 
-                                        <td>
-                                            {item.description}
-                                        </td>
+                                            <td>
 
+                                                {
+                                                    formatDate(
+                                                        item.created_at
+                                                    )
+                                                }
 
-                                        <td>
+                                            </td>
 
-                                            <span
-                                                className={`maintenance-priority ${
-                                                    String(
-                                                        item.priority || ""
-                                                    ).toLowerCase()
-                                                }`}
-                                            >
-                                                {item.priority}
-                                            </span>
+                                        </tr>
 
-                                        </td>
-
-
-                                        <td>
-
-                                            <span className="maintenance-status">
-                                                {item.status}
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-                                            {formatDate(
-                                                item.created_at
-                                            )}
-                                        </td>
-
-                                    </tr>
-
-                                ))
+                                    )
+                                )
 
                             )}
 
@@ -485,216 +580,272 @@ function Maintenance() {
 
             {/* =====================
                 MODAL
+                HANYA ENGINEER
             ====================== */}
 
-            {modalOpen && (
+            {modalOpen &&
+                userRole === "engineer" && (
 
-                <div
-                    className="maintenance-modal"
-                    onClick={(e) => {
+                    <div
+                        className="maintenance-modal"
 
-                        if (
-                            e.target.className ===
-                            "maintenance-modal"
-                        ) {
-                            setModalOpen(false);
-                        }
+                        onClick={(e) => {
 
-                    }}
-                >
+                            if (
+                                e.target.className ===
+                                "maintenance-modal"
+                            ) {
 
-                    <div className="maintenance-modal-box">
+                                setModalOpen(
+                                    false
+                                );
+
+                            }
+
+                        }}
+                    >
+
+                        <div className="maintenance-modal-box">
 
 
-                        {/* MODAL HEADER */}
+                            {/* MODAL HEADER */}
 
-                        <div className="maintenance-modal-header">
+                            <div className="maintenance-modal-header">
 
-                            <div>
+                                <div>
 
-                                <h2>
-                                    Request Maintenance
-                                </h2>
+                                    <h2>
+                                        Request Maintenance
+                                    </h2>
 
-                                <p>
-                                    Buat permintaan maintenance baru.
-                                </p>
+                                    <p>
+                                        Buat permintaan maintenance baru.
+                                    </p>
+
+                                </div>
+
+
+                                <button
+                                    className="maintenance-close"
+
+                                    onClick={() =>
+                                        setModalOpen(
+                                            false
+                                        )
+                                    }
+                                >
+
+                                    <X
+                                        size={20}
+                                    />
+
+                                </button>
 
                             </div>
 
 
-                            <button
-                                className="maintenance-close"
-                                onClick={() =>
-                                    setModalOpen(false)
+                            {/* FORM */}
+
+                            <form
+                                onSubmit={
+                                    handleSubmit
                                 }
+
+                                className="maintenance-form"
                             >
 
-                                <X size={20} />
 
-                            </button>
+                                {/* EQUIPMENT */}
+
+                                <div className="maintenance-field">
+
+                                    <label>
+                                        Equipment
+                                    </label>
+
+                                    <select
+                                        name="equipment_id"
+
+                                        value={
+                                            formData.equipment_id
+                                        }
+
+                                        onChange={
+                                            handleChange
+                                        }
+
+                                        required
+                                    >
+
+                                        <option value="">
+                                            -- Pilih Equipment --
+                                        </option>
+
+
+                                        {equipment.map(
+                                            (item) => (
+
+                                                <option
+                                                    key={
+                                                        item.id
+                                                    }
+
+                                                    value={
+                                                        item.id
+                                                    }
+                                                >
+
+                                                    {
+                                                        item.equipment_code
+                                                    }
+
+                                                    {" - "}
+
+                                                    {
+                                                        item.name
+                                                    }
+
+                                                </option>
+
+                                            )
+                                        )}
+
+                                    </select>
+
+                                </div>
+
+
+                                {/* ENGINEER */}
+
+                                <div className="maintenance-field">
+
+                                    <label>
+                                        Engineer ID
+                                    </label>
+
+                                    <input
+                                        type="number"
+
+                                        name="engineer_id"
+
+                                        value={
+                                            formData.engineer_id
+                                        }
+
+                                        onChange={
+                                            handleChange
+                                        }
+
+                                        min="1"
+
+                                        required
+
+                                        placeholder="Contoh: 1"
+                                    />
+
+                                </div>
+
+
+                                {/* PRIORITY */}
+
+                                <div className="maintenance-field">
+
+                                    <label>
+                                        Priority
+                                    </label>
+
+                                    <select
+                                        name="priority"
+
+                                        value={
+                                            formData.priority
+                                        }
+
+                                        onChange={
+                                            handleChange
+                                        }
+                                    >
+
+                                        <option value="LOW">
+                                            LOW
+                                        </option>
+
+                                        <option value="MEDIUM">
+                                            MEDIUM
+                                        </option>
+
+                                        <option value="HIGH">
+                                            HIGH
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+
+                                {/* DESCRIPTION */}
+
+                                <div className="maintenance-field">
+
+                                    <label>
+                                        Description
+                                    </label>
+
+                                    <textarea
+                                        name="description"
+
+                                        value={
+                                            formData.description
+                                        }
+
+                                        onChange={
+                                            handleChange
+                                        }
+
+                                        required
+
+                                        placeholder="Jelaskan masalah equipment"
+                                    />
+
+                                </div>
+
+
+                                {/* ACTION */}
+
+                                <div className="maintenance-form-actions">
+
+                                    <button
+                                        type="button"
+
+                                        className="secondary-btn"
+
+                                        onClick={() =>
+                                            setModalOpen(
+                                                false
+                                            )
+                                        }
+                                    >
+                                        Batal
+                                    </button>
+
+
+                                    <button
+                                        type="submit"
+
+                                        className="primary-btn"
+                                    >
+                                        Simpan Request
+                                    </button>
+
+                                </div>
+
+                            </form>
 
                         </div>
 
-
-                        {/* FORM */}
-
-                        <form
-                            onSubmit={handleSubmit}
-                            className="maintenance-form"
-                        >
-
-
-                            {/* EQUIPMENT */}
-
-                            <div className="maintenance-field">
-
-                                <label>
-                                    Equipment
-                                </label>
-
-                                <select
-                                    name="equipment_id"
-                                    value={
-                                        formData.equipment_id
-                                    }
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="">
-                                        -- Pilih Equipment --
-                                    </option>
-
-
-                                    {equipment.map(
-                                        (item) => (
-
-                                            <option
-                                                key={item.id}
-                                                value={item.id}
-                                            >
-                                                {item.equipment_code}
-                                                {" - "}
-                                                {item.name}
-                                            </option>
-
-                                        )
-                                    )}
-
-                                </select>
-
-                            </div>
-
-
-                            {/* ENGINEER */}
-
-                            <div className="maintenance-field">
-
-                                <label>
-                                    Engineer ID
-                                </label>
-
-                                <input
-                                    type="number"
-                                    name="engineer_id"
-                                    value={
-                                        formData.engineer_id
-                                    }
-                                    onChange={handleChange}
-                                    min="1"
-                                    required
-                                    placeholder="Contoh: 1"
-                                />
-
-                            </div>
-
-
-                            {/* PRIORITY */}
-
-                            <div className="maintenance-field">
-
-                                <label>
-                                    Priority
-                                </label>
-
-                                <select
-                                    name="priority"
-                                    value={
-                                        formData.priority
-                                    }
-                                    onChange={handleChange}
-                                >
-
-                                    <option value="LOW">
-                                        LOW
-                                    </option>
-
-                                    <option value="MEDIUM">
-                                        MEDIUM
-                                    </option>
-
-                                    <option value="HIGH">
-                                        HIGH
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            {/* DESCRIPTION */}
-
-                            <div className="maintenance-field">
-
-                                <label>
-                                    Description
-                                </label>
-
-                                <textarea
-                                    name="description"
-                                    value={
-                                        formData.description
-                                    }
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Jelaskan masalah equipment"
-                                />
-
-                            </div>
-
-
-                            {/* ACTION */}
-
-                            <div className="maintenance-form-actions">
-
-                                <button
-                                    type="button"
-                                    className="secondary-btn"
-                                    onClick={() =>
-                                        setModalOpen(false)
-                                    }
-                                >
-                                    Batal
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    className="primary-btn"
-                                >
-                                    Simpan Request
-                                </button>
-
-                            </div>
-
-                        </form>
-
                     </div>
 
-                </div>
-
-            )}
+                )}
 
         </div>
     );
