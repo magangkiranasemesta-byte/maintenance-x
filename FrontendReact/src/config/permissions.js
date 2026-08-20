@@ -2,9 +2,9 @@ export const rolePermissions = {
 
     admin: {
         dashboard: true,
-        equipment: true,
+        equipment: false,
         maintenance: true,
-        approval: true,
+        approval: false,
         history: true
     },
 
@@ -26,7 +26,7 @@ export const rolePermissions = {
 
     manager: {
     dashboard: true,
-    equipment: true,
+    equipment: false,
     maintenance: false,
     approval: true,
     history: true
