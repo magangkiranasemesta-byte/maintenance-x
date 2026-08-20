@@ -11,13 +11,11 @@ import {
     RefreshCw
 } from "lucide-react";
 
-
 // ======================================================
 // API BACKEND
 // ======================================================
 
 const API = "http://localhost:3000";
-
 
 // ======================================================
 // APPROVAL PAGE
@@ -29,8 +27,7 @@ function Approval() {
     // USER LOGIN
     // ==================================================
 
-    const storedUser =
-        localStorage.getItem("user");
+    const storedUser = localStorage.getItem("user");
 
     let user = null;
 
@@ -49,58 +46,40 @@ function Approval() {
 
     }
 
-
     // ==================================================
     // ROLE
     // ==================================================
 
-    const role =
-        String(user?.role || "")
-            .toLowerCase()
-            .trim();
-
+    const role = String(
+        user?.role || ""
+    )
+        .toLowerCase()
+        .trim();
 
     const isSupervisor =
         role === "supervisor";
 
-
     const isManager =
         role === "manager";
-
 
     // ==================================================
     // STATE
     // ==================================================
 
-    const [
-        requests,
-        setRequests
-    ] = useState([]);
+    const [requests, setRequests] =
+        useState([]);
 
+    const [loading, setLoading] =
+        useState(true);
 
-    const [
-        loading,
-        setLoading
-    ] = useState(true);
+    const [refreshing, setRefreshing] =
+        useState(false);
 
+    const [processingId, setProcessingId] =
+        useState(null);
 
-    const [
-        refreshing,
-        setRefreshing
-    ] = useState(false);
-
-
-    const [
-        processingId,
-        setProcessingId
-    ] = useState(null);
-
-
-    const [
-        notification,
-        setNotification
-    ] = useState(null);
-
+    const [notification, setNotification] =
+        useState(null);
 
     // ==================================================
     // NOTIFICATION
@@ -116,7 +95,6 @@ function Approval() {
             type
         });
 
-
         setTimeout(() => {
 
             setNotification(null);
@@ -125,21 +103,25 @@ function Approval() {
 
     };
 
-
     // ==================================================
     // STATUS YANG DITUNGGU
+    //
+    // SUPERVISOR :
+    // PENDING_SUPERVISOR
+    //
+    // MANAGER :
+    // PENDING_MANAGER
     // ==================================================
 
     const waitingStatus =
         isSupervisor
             ? "PENDING_SUPERVISOR"
             : isManager
-                ? "WAITING_MANAGER_APPROVAL"
+                ? "PENDING_MANAGER"
                 : null;
 
-
     // ==================================================
-    // LOAD MAINTENANCE
+    // LOAD REQUEST
     // ==================================================
 
     const loadRequests = async (
@@ -158,16 +140,10 @@ function Approval() {
 
             }
 
-
             const response =
                 await fetch(
                     `${API}/api/maintenance`
                 );
-
-
-            // ==========================================
-            // CEK HTTP
-            // ==========================================
 
             if (!response.ok) {
 
@@ -184,36 +160,28 @@ function Approval() {
 
                 }
 
-
                 throw new Error(
-                    errorData?.error ||
                     errorData?.message ||
+                    errorData?.error ||
                     `Server error ${response.status}`
                 );
 
             }
 
-
             const data =
                 await response.json();
-
-
-            // ==========================================
-            // PASTIKAN ARRAY
-            // ==========================================
 
             if (!Array.isArray(data)) {
 
                 throw new Error(
-                    "Data maintenance dari server bukan array."
+                    "Data maintenance bukan array."
                 );
 
             }
 
-
-            // ==========================================
-            // FILTER SESUAI ROLE
-            // ==========================================
+            // ==================================================
+            // NORMALISASI STATUS
+            // ==================================================
 
             const filtered =
                 data.filter(
@@ -226,7 +194,6 @@ function Approval() {
                                 .trim()
                                 .toUpperCase();
 
-
                         return (
                             status ===
                             waitingStatus
@@ -235,11 +202,41 @@ function Approval() {
                     }
                 );
 
+            console.log(
+                "================================"
+            );
+
+            console.log(
+                "APPROVAL DATA"
+            );
+
+            console.log(
+                "Role:",
+                role
+            );
+
+            console.log(
+                "Waiting Status:",
+                waitingStatus
+            );
+
+            console.log(
+                "Total Data:",
+                data.length
+            );
+
+            console.log(
+                "Data Approval:",
+                filtered
+            );
+
+            console.log(
+                "================================"
+            );
 
             setRequests(
                 filtered
             );
-
 
         } catch (error) {
 
@@ -248,16 +245,13 @@ function Approval() {
                 error
             );
 
-
             showNotification(
                 error.message ||
                 "Gagal mengambil data maintenance.",
                 "error"
             );
 
-
             setRequests([]);
-
 
         } finally {
 
@@ -268,7 +262,6 @@ function Approval() {
         }
 
     };
-
 
     // ==================================================
     // LOAD PERTAMA
@@ -291,7 +284,6 @@ function Approval() {
 
     }, [role]);
 
-
     // ==================================================
     // UPDATE STATUS
     // ==================================================
@@ -305,9 +297,19 @@ function Approval() {
 
             setProcessingId(id);
 
+            // ==================================================
+            // NORMALISASI STATUS FRONTEND
+            // ==================================================
+
+            const normalizedStatus =
+                String(
+                    newStatus || ""
+                )
+                    .trim()
+                    .toUpperCase();
 
             console.log(
-                "================================"
+                "========================================"
             );
 
             console.log(
@@ -325,14 +327,17 @@ function Approval() {
             );
 
             console.log(
-                "Status baru:",
-                newStatus
+                "Status:",
+                normalizedStatus
             );
 
             console.log(
-                "================================"
+                "========================================"
             );
 
+            // ==================================================
+            // REQUEST
+            // ==================================================
 
             const response =
                 await fetch(
@@ -342,21 +347,21 @@ function Approval() {
 
                         headers: {
                             "Content-Type":
+                                "application/json",
+                            "Accept":
                                 "application/json"
                         },
 
-                        body:
-                            JSON.stringify({
-                                status:
-                                    newStatus
-                            })
+                        body: JSON.stringify({
+                            status:
+                                normalizedStatus
+                        })
                     }
                 );
 
-
-            // ==========================================
-            // BACA RESPONSE
-            // ==========================================
+            // ==================================================
+            // RESPONSE
+            // ==================================================
 
             let result = null;
 
@@ -371,58 +376,53 @@ function Approval() {
 
             }
 
-
             console.log(
                 "Backend response:",
                 result
             );
 
-
-            // ==========================================
-            // ERROR DARI BACKEND
-            // ==========================================
+            // ==================================================
+            // HTTP ERROR
+            // ==================================================
 
             if (!response.ok) {
 
-                const backendError =
-                    result?.error ||
-                    result?.message ||
-                    `Request gagal dengan status ${response.status}`;
-
-
                 throw new Error(
-                    backendError
+                    result?.message ||
+                    result?.error ||
+                    `Request gagal (${response.status})`
                 );
 
             }
 
-
-            // ==========================================
-            // BERHASIL
-            // ==========================================
+            // ==================================================
+            // BACKEND ERROR
+            // ==================================================
 
             if (
-                !result?.success &&
-                result?.success !== undefined
+                result?.success === false
             ) {
 
                 throw new Error(
-                    result?.error ||
                     result?.message ||
-                    "Backend gagal mengubah status."
+                    result?.error ||
+                    "Gagal mengubah status."
                 );
 
             }
 
-
-            // ==========================================
-            // SUPERVISOR
-            // ==========================================
+            // ==================================================
+            // SUPERVISOR APPROVE
+            //
+            // PENDING_SUPERVISOR
+            //        ↓
+            // PENDING_MANAGER
+            // ==================================================
 
             if (
                 isSupervisor &&
-                newStatus ===
-                    "WAITING_MANAGER_APPROVAL"
+                normalizedStatus ===
+                    "PENDING_MANAGER"
             ) {
 
                 showNotification(
@@ -432,14 +432,17 @@ function Approval() {
 
             }
 
-
-            // ==========================================
-            // MANAGER
-            // ==========================================
+            // ==================================================
+            // MANAGER APPROVE
+            //
+            // PENDING_MANAGER
+            //        ↓
+            // APPROVED
+            // ==================================================
 
             else if (
                 isManager &&
-                newStatus ===
+                normalizedStatus ===
                     "APPROVED"
             ) {
 
@@ -450,13 +453,12 @@ function Approval() {
 
             }
 
-
-            // ==========================================
+            // ==================================================
             // REJECT
-            // ==========================================
+            // ==================================================
 
             else if (
-                newStatus ===
+                normalizedStatus ===
                 "REJECTED"
             ) {
 
@@ -467,13 +469,11 @@ function Approval() {
 
             }
 
-
-            // ==========================================
+            // ==================================================
             // REFRESH
-            // ==========================================
+            // ==================================================
 
             await loadRequests(false);
-
 
         } catch (error) {
 
@@ -482,28 +482,19 @@ function Approval() {
                 error
             );
 
-
-            // ==========================================
-            // TAMPILKAN ERROR ASLI
-            // ==========================================
-
             showNotification(
                 error.message ||
                 "Gagal mengubah status maintenance.",
                 "error"
             );
 
-
         } finally {
 
-            setProcessingId(
-                null
-            );
+            setProcessingId(null);
 
         }
 
     };
-
 
     // ==================================================
     // SUPERVISOR APPROVE
@@ -527,12 +518,10 @@ function Approval() {
 
         }
 
-
         const confirmed =
             window.confirm(
                 `Approve maintenance #${item.id}?\n\nRequest akan diteruskan ke Manager.`
             );
-
 
         if (!confirmed) {
 
@@ -540,24 +529,12 @@ function Approval() {
 
         }
 
-
-        // ==========================================
-        // PENTING
-        //
-        // Supervisor:
-        //
-        // PENDING_SUPERVISOR
-        //          ↓
-        // WAITING_MANAGER_APPROVAL
-        // ==========================================
-
         updateStatus(
             item.id,
-            "WAITING_MANAGER_APPROVAL"
+            "PENDING_MANAGER"
         );
 
     };
-
 
     // ==================================================
     // MANAGER APPROVE
@@ -581,12 +558,10 @@ function Approval() {
 
         }
 
-
         const confirmed =
             window.confirm(
                 `Approve maintenance #${item.id}?\n\nRequest akan menjadi APPROVED.`
             );
-
 
         if (!confirmed) {
 
@@ -594,24 +569,12 @@ function Approval() {
 
         }
 
-
-        // ==========================================
-        // PENTING
-        //
-        // Manager:
-        //
-        // WAITING_MANAGER_APPROVAL
-        //          ↓
-        // APPROVED
-        // ==========================================
-
         updateStatus(
             item.id,
             "APPROVED"
         );
 
     };
-
 
     // ==================================================
     // REJECT
@@ -635,19 +598,16 @@ function Approval() {
 
         }
 
-
         const confirmed =
             window.confirm(
                 `Tolak maintenance #${item.id}?\n\nRequest akan menjadi REJECTED.`
             );
-
 
         if (!confirmed) {
 
             return;
 
         }
-
 
         updateStatus(
             item.id,
@@ -656,9 +616,8 @@ function Approval() {
 
     };
 
-
     // ==================================================
-    // REFRESH BUTTON
+    // REFRESH
     // ==================================================
 
     const handleRefresh = () => {
@@ -666,7 +625,6 @@ function Approval() {
         loadRequests(false);
 
     };
-
 
     // ==================================================
     // FORMAT DATE
@@ -682,10 +640,8 @@ function Approval() {
 
         }
 
-
         const date =
             new Date(value);
-
 
         if (
             Number.isNaN(
@@ -696,7 +652,6 @@ function Approval() {
             return "-";
 
         }
-
 
         return date.toLocaleString(
             "id-ID",
@@ -711,7 +666,6 @@ function Approval() {
 
     };
 
-
     // ==================================================
     // PRIORITY CLASS
     // ==================================================
@@ -723,10 +677,10 @@ function Approval() {
         return String(
             priority || "MEDIUM"
         )
-            .toLowerCase();
+            .toLowerCase()
+            .trim();
 
     };
-
 
     // ==================================================
     // STATUS CLASS
@@ -740,8 +694,8 @@ function Approval() {
             String(
                 status || ""
             )
-                .toLowerCase();
-
+                .toLowerCase()
+                .trim();
 
         if (
             normalized ===
@@ -752,16 +706,14 @@ function Approval() {
 
         }
 
-
         if (
             normalized ===
-            "waiting_manager_approval"
+            "pending_manager"
         ) {
 
             return "waiting";
 
         }
-
 
         if (
             normalized ===
@@ -772,7 +724,6 @@ function Approval() {
 
         }
 
-
         if (
             normalized ===
             "rejected"
@@ -782,11 +733,27 @@ function Approval() {
 
         }
 
+        if (
+            normalized ===
+            "in_progress"
+        ) {
+
+            return "approved";
+
+        }
+
+        if (
+            normalized ===
+            "completed"
+        ) {
+
+            return "approved";
+
+        }
 
         return "";
 
     };
-
 
     // ==================================================
     // ROLE TIDAK VALID
@@ -815,11 +782,9 @@ function Approval() {
                         size={50}
                     />
 
-
                     <h2>
                         Approval Tidak Tersedia
                     </h2>
-
 
                     <p>
                         Halaman ini hanya dapat
@@ -835,7 +800,6 @@ function Approval() {
 
     }
 
-
     // ==================================================
     // RENDER
     // ==================================================
@@ -846,9 +810,7 @@ function Approval() {
             className="approval-page"
         >
 
-            {/* =========================================
-                HEADER
-            ========================================== */}
+            {/* HEADER */}
 
             <div
                 className="approval-page-header"
@@ -866,7 +828,6 @@ function Approval() {
 
                     </span>
 
-
                     <h1>
 
                         {isSupervisor
@@ -875,7 +836,6 @@ function Approval() {
 
                     </h1>
 
-
                     <p>
 
                         {isSupervisor
@@ -883,14 +843,12 @@ function Approval() {
                             ? "Review dan setujui maintenance request sebelum diteruskan ke manager."
 
                             : "Review maintenance request yang telah disetujui supervisor."
+
                         }
 
                     </p>
 
                 </div>
-
-
-                {/* ROLE */}
 
                 <div
                     style={{
@@ -926,7 +884,6 @@ function Approval() {
 
                     )}
 
-
                     {isSupervisor
                         ? "Supervisor"
                         : "Manager"}
@@ -935,10 +892,7 @@ function Approval() {
 
             </div>
 
-
-            {/* =========================================
-                NOTIFICATION
-            ========================================== */}
+            {/* NOTIFICATION */}
 
             {notification && (
 
@@ -969,7 +923,6 @@ function Approval() {
 
                     )}
 
-
                     <span>
                         {notification.message}
                     </span>
@@ -978,16 +931,11 @@ function Approval() {
 
             )}
 
-
-            {/* =========================================
-                SUMMARY
-            ========================================== */}
+            {/* SUMMARY */}
 
             <div
                 className="approval-summary"
             >
-
-                {/* WAITING */}
 
                 <div
                     className="approval-summary-card"
@@ -1003,7 +951,6 @@ function Approval() {
 
                     </div>
 
-
                     <div>
 
                         <span>
@@ -1014,21 +961,13 @@ function Approval() {
 
                         </span>
 
-
                         <strong>
-
-                            {
-                                requests.length
-                            }
-
+                            {requests.length}
                         </strong>
 
                     </div>
 
                 </div>
-
-
-                {/* CURRENT ROLE */}
 
                 <div
                     className="approval-summary-card"
@@ -1054,13 +993,11 @@ function Approval() {
 
                     </div>
 
-
                     <div>
 
                         <span>
                             Current Approval
                         </span>
-
 
                         <strong
                             style={{
@@ -1080,10 +1017,7 @@ function Approval() {
 
             </div>
 
-
-            {/* =========================================
-                APPROVAL FLOW
-            ========================================== */}
+            {/* APPROVAL FLOW */}
 
             <div
                 style={{
@@ -1096,8 +1030,6 @@ function Approval() {
                 }}
             >
 
-                {/* ENGINEER */}
-
                 <div
                     style={{
                         padding: "14px 24px",
@@ -1109,11 +1041,8 @@ function Approval() {
                         fontSize: "18px"
                     }}
                 >
-
                     Engineer
-
                 </div>
-
 
                 <span
                     style={{
@@ -1122,9 +1051,6 @@ function Approval() {
                 >
                     →
                 </span>
-
-
-                {/* SUPERVISOR */}
 
                 <div
                     style={{
@@ -1138,11 +1064,8 @@ function Approval() {
                         fontSize: "18px"
                     }}
                 >
-
                     Supervisor
-
                 </div>
-
 
                 <span
                     style={{
@@ -1151,9 +1074,6 @@ function Approval() {
                 >
                     →
                 </span>
-
-
-                {/* MANAGER */}
 
                 <div
                     style={{
@@ -1167,11 +1087,8 @@ function Approval() {
                         fontSize: "18px"
                     }}
                 >
-
                     Manager
-
                 </div>
-
 
                 <span
                     style={{
@@ -1180,9 +1097,6 @@ function Approval() {
                 >
                     →
                 </span>
-
-
-                {/* APPROVED */}
 
                 <div
                     style={{
@@ -1196,23 +1110,16 @@ function Approval() {
                         fontSize: "18px"
                     }}
                 >
-
                     Approved
-
                 </div>
 
             </div>
 
-
-            {/* =========================================
-                TABLE
-            ========================================== */}
+            {/* TABLE */}
 
             <div
                 className="approval-content-card"
             >
-
-                {/* TABLE HEADER */}
 
                 <div
                     style={{
@@ -1226,9 +1133,7 @@ function Approval() {
 
                     <button
                         type="button"
-                        onClick={
-                            handleRefresh
-                        }
+                        onClick={handleRefresh}
                         disabled={
                             refreshing ||
                             loading
@@ -1243,8 +1148,7 @@ function Approval() {
                             padding:
                                 "10px 16px",
                             borderRadius: "10px",
-                            cursor:
-                                "pointer",
+                            cursor: "pointer",
                             fontWeight: "600"
                         }}
                     >
@@ -1265,7 +1169,6 @@ function Approval() {
 
                 </div>
 
-
                 <div
                     className="approval-table-wrap"
                 >
@@ -1278,48 +1181,27 @@ function Approval() {
 
                             <tr>
 
-                                <th>
-                                    ID
-                                </th>
+                                <th>ID</th>
 
-                                <th>
-                                    EQUIPMENT
-                                </th>
+                                <th>EQUIPMENT</th>
 
-                                <th>
-                                    ENGINEER
-                                </th>
+                                <th>ENGINEER</th>
 
-                                <th>
-                                    DESCRIPTION
-                                </th>
+                                <th>DESCRIPTION</th>
 
-                                <th>
-                                    PRIORITY
-                                </th>
+                                <th>PRIORITY</th>
 
-                                <th>
-                                    STATUS
-                                </th>
+                                <th>STATUS</th>
 
-                                <th>
-                                    TANGGAL
-                                </th>
+                                <th>TANGGAL</th>
 
-                                <th>
-                                    ACTION
-                                </th>
+                                <th>ACTION</th>
 
                             </tr>
 
                         </thead>
 
-
                         <tbody>
-
-                            {/* =================================
-                                LOADING
-                            ================================== */}
 
                             {loading ? (
 
@@ -1350,10 +1232,6 @@ function Approval() {
 
                             ) : requests.length === 0 ? (
 
-                                /* =================================
-                                    EMPTY
-                                ================================== */
-
                                 <tr>
 
                                     <td
@@ -1369,11 +1247,9 @@ function Approval() {
                                                 size={40}
                                             />
 
-
                                             <strong>
                                                 Tidak ada request
                                             </strong>
-
 
                                             <span>
 
@@ -1382,6 +1258,7 @@ function Approval() {
                                                     ? "Tidak ada maintenance request yang menunggu approval Supervisor."
 
                                                     : "Tidak ada maintenance request yang menunggu approval Manager."
+
                                                 }
 
                                             </span>
@@ -1394,17 +1271,12 @@ function Approval() {
 
                             ) : (
 
-                                /* =================================
-                                    DATA
-                                ================================== */
-
                                 requests.map(
                                     (item) => {
 
                                         const isProcessing =
                                             processingId ===
                                             item.id;
-
 
                                         return (
 
@@ -1414,8 +1286,6 @@ function Approval() {
                                                 }
                                             >
 
-                                                {/* ID */}
-
                                                 <td>
 
                                                     <strong>
@@ -1423,9 +1293,6 @@ function Approval() {
                                                     </strong>
 
                                                 </td>
-
-
-                                                {/* EQUIPMENT */}
 
                                                 <td>
 
@@ -1467,7 +1334,6 @@ function Approval() {
 
                                                         </div>
 
-
                                                         <strong>
 
                                                             Equipment #
@@ -1482,9 +1348,6 @@ function Approval() {
 
                                                 </td>
 
-
-                                                {/* ENGINEER */}
-
                                                 <td>
 
                                                     Engineer #
@@ -1495,9 +1358,6 @@ function Approval() {
 
                                                 </td>
 
-
-                                                {/* DESCRIPTION */}
-
                                                 <td>
 
                                                     {
@@ -1506,9 +1366,6 @@ function Approval() {
                                                     }
 
                                                 </td>
-
-
-                                                {/* PRIORITY */}
 
                                                 <td>
 
@@ -1529,9 +1386,6 @@ function Approval() {
 
                                                 </td>
 
-
-                                                {/* STATUS */}
-
                                                 <td>
 
                                                     <span
@@ -1546,7 +1400,6 @@ function Approval() {
                                                             size={14}
                                                         />
 
-
                                                         {
                                                             item.status
                                                         }
@@ -1554,9 +1407,6 @@ function Approval() {
                                                     </span>
 
                                                 </td>
-
-
-                                                {/* DATE */}
 
                                                 <td>
 
@@ -1568,18 +1418,11 @@ function Approval() {
 
                                                 </td>
 
-
-                                                {/* ACTION */}
-
                                                 <td>
 
                                                     <div
                                                         className="approval-actions"
                                                     >
-
-                                                        {/* =================================
-                                                            APPROVE SUPERVISOR
-                                                        ================================== */}
 
                                                         {isSupervisor && (
 
@@ -1600,7 +1443,6 @@ function Approval() {
                                                                     size={17}
                                                                 />
 
-
                                                                 {isProcessing
                                                                     ? "Processing..."
                                                                     : "Approve"}
@@ -1608,11 +1450,6 @@ function Approval() {
                                                             </button>
 
                                                         )}
-
-
-                                                        {/* =================================
-                                                            APPROVE MANAGER
-                                                        ================================== */}
 
                                                         {isManager && (
 
@@ -1633,7 +1470,6 @@ function Approval() {
                                                                     size={17}
                                                                 />
 
-
                                                                 {isProcessing
                                                                     ? "Processing..."
                                                                     : "Approve"}
@@ -1641,11 +1477,6 @@ function Approval() {
                                                             </button>
 
                                                         )}
-
-
-                                                        {/* =================================
-                                                            REJECT
-                                                        ================================== */}
 
                                                         <button
                                                             type="button"
@@ -1689,11 +1520,6 @@ function Approval() {
 
             </div>
 
-
-            {/* =========================================
-                INLINE STYLE UNTUK SPIN
-            ========================================== */}
-
             <style>
 
                 {`
@@ -1719,6 +1545,5 @@ function Approval() {
     );
 
 }
-
 
 export default Approval;

@@ -6,6 +6,20 @@ const db = require("../db");
 
 
 // ======================================================
+// STATUS DATABASE
+// ======================================================
+//
+// PENDING_SUPERVISOR
+// PENDING_MANAGER
+// REJECTED
+// APPROVED
+// IN_PROGRESS
+// COMPLETED
+//
+// ======================================================
+
+
+// ======================================================
 // GET ALL MAINTENANCE
 // ======================================================
 
@@ -17,7 +31,6 @@ router.get("/", (req, res) => {
         ORDER BY created_at DESC
     `;
 
-
     db.query(
         sql,
         (err, results) => {
@@ -28,7 +41,6 @@ router.get("/", (req, res) => {
                     "GET MAINTENANCE ERROR:",
                     err
                 );
-
 
                 return res.status(500).json({
 
@@ -44,8 +56,7 @@ router.get("/", (req, res) => {
 
             }
 
-
-            res.json(results);
+            return res.json(results);
 
         }
     );
@@ -55,7 +66,10 @@ router.get("/", (req, res) => {
 
 // ======================================================
 // CREATE MAINTENANCE REQUEST
-// ENGINEER → PENDING_SUPERVISOR
+//
+// ENGINEER
+//    ↓
+// PENDING_SUPERVISOR
 // ======================================================
 
 router.post("/", (req, res) => {
@@ -68,9 +82,9 @@ router.post("/", (req, res) => {
     } = req.body;
 
 
-    // -----------------------------------------------
+    // ==================================================
     // VALIDATION
-    // -----------------------------------------------
+    // ==================================================
 
     if (
         !equipment_id ||
@@ -90,9 +104,9 @@ router.post("/", (req, res) => {
     }
 
 
-    // -----------------------------------------------
+    // ==================================================
     // INSERT
-    // -----------------------------------------------
+    // ==================================================
 
     const sql = `
         INSERT INTO maintenance_requests
@@ -134,7 +148,6 @@ router.post("/", (req, res) => {
                     err
                 );
 
-
                 return res.status(500).json({
 
                     success: false,
@@ -150,7 +163,7 @@ router.post("/", (req, res) => {
             }
 
 
-            res.status(201).json({
+            return res.status(201).json({
 
                 success: true,
 
@@ -173,18 +186,23 @@ router.post("/", (req, res) => {
 
 // ======================================================
 // UPDATE STATUS
+// ======================================================
 //
-// ENGINEER
-//    ↓
 // PENDING_SUPERVISOR
-//    ↓
-// SUPERVISOR
-//    ↓
-// WAITING_MANAGER_APPROVAL
-//    ↓
-// MANAGER
-//    ↓
+//        ↓
+// PENDING_MANAGER
+//        ↓
 // APPROVED
+//        ↓
+// IN_PROGRESS
+//        ↓
+// COMPLETED
+//
+// REJECT:
+//
+// PENDING_SUPERVISOR → REJECTED
+// PENDING_MANAGER    → REJECTED
+//
 // ======================================================
 
 router.put("/:id/status", (req, res) => {
@@ -194,24 +212,92 @@ router.put("/:id/status", (req, res) => {
     } = req.params;
 
 
-    const {
-        status
-    } = req.body;
+    // ==================================================
+    // AMBIL STATUS DARI BODY
+    // ==================================================
+
+    const rawStatus =
+        req.body?.status;
+
+
+    // ==================================================
+    // NORMALISASI STATUS
+    // ==================================================
+
+    let status =
+        String(
+            rawStatus || ""
+        )
+            .trim()
+            .toUpperCase();
 
 
     console.log("");
-    console.log("========================================");
-    console.log("APPROVAL REQUEST");
-    console.log("========================================");
+    console.log(
+        "========================================"
+    );
+
+    console.log(
+        "APPROVAL REQUEST"
+    );
+
+    console.log(
+        "========================================"
+    );
+
     console.log(
         "Maintenance ID :",
         id
     );
+
     console.log(
-        "Status baru    :",
+        "Status dari FE :",
+        rawStatus
+    );
+
+    console.log(
+        "Status normal  :",
         status
     );
-    console.log("========================================");
+
+    console.log(
+        "========================================"
+    );
+
+
+    // ==================================================
+    // COMPATIBILITY STATUS
+    //
+    // Kalau frontend lama masih mengirim:
+    //
+    // WAITING_MANAGER_APPROVAL
+    //
+    // backend otomatis mengubahnya menjadi:
+    //
+    // PENDING_MANAGER
+    //
+    // ==================================================
+
+    const statusAliases = {
+
+        WAITING_MANAGER_APPROVAL:
+            "PENDING_MANAGER"
+
+    };
+
+
+    if (
+        statusAliases[status]
+    ) {
+
+        console.log(
+            `Status alias ditemukan: ${status} → ${statusAliases[status]}`
+        );
+
+        status =
+            statusAliases[status];
+
+    }
 
 
     // ==================================================
@@ -222,14 +308,22 @@ router.put("/:id/status", (req, res) => {
 
         "PENDING_SUPERVISOR",
 
-        "WAITING_MANAGER_APPROVAL",
+        "PENDING_MANAGER",
+
+        "REJECTED",
 
         "APPROVED",
 
-        "REJECTED"
+        "IN_PROGRESS",
+
+        "COMPLETED"
 
     ];
 
+
+    // ==================================================
+    // VALIDASI STATUS KOSONG
+    // ==================================================
 
     if (!status) {
 
@@ -238,16 +332,28 @@ router.put("/:id/status", (req, res) => {
             success: false,
 
             message:
-                "Status wajib diisi"
+                "Status wajib diisi",
+
+            received:
+                rawStatus
 
         });
 
     }
 
 
+    // ==================================================
+    // VALIDASI STATUS
+    // ==================================================
+
     if (
         !allowedStatuses.includes(status)
     ) {
+
+        console.error(
+            "STATUS TIDAK VALID:",
+            status
+        );
 
         return res.status(400).json({
 
@@ -292,7 +398,6 @@ router.put("/:id/status", (req, res) => {
                     selectError
                 );
 
-
                 return res.status(500).json({
 
                     success: false,
@@ -308,9 +413,9 @@ router.put("/:id/status", (req, res) => {
             }
 
 
-            // ------------------------------------------
-            // DATA TIDAK ADA
-            // ------------------------------------------
+            // ==================================================
+            // DATA TIDAK DITEMUKAN
+            // ==================================================
 
             if (
                 !rows ||
@@ -328,6 +433,10 @@ router.put("/:id/status", (req, res) => {
 
             }
 
+
+            // ==================================================
+            // STATUS SEKARANG
+            // ==================================================
 
             const currentStatus =
                 String(
@@ -347,13 +456,13 @@ router.put("/:id/status", (req, res) => {
             // SUPERVISOR APPROVE
             //
             // PENDING_SUPERVISOR
-            //          ↓
-            // WAITING_MANAGER_APPROVAL
+            //        ↓
+            // PENDING_MANAGER
             // ==================================================
 
             if (
                 status ===
-                    "WAITING_MANAGER_APPROVAL"
+                "PENDING_MANAGER"
             ) {
 
                 if (
@@ -378,19 +487,19 @@ router.put("/:id/status", (req, res) => {
             // ==================================================
             // MANAGER APPROVE
             //
-            // WAITING_MANAGER_APPROVAL
-            //          ↓
+            // PENDING_MANAGER
+            //        ↓
             // APPROVED
             // ==================================================
 
             if (
                 status ===
-                    "APPROVED"
+                "APPROVED"
             ) {
 
                 if (
                     currentStatus !==
-                    "WAITING_MANAGER_APPROVAL"
+                    "PENDING_MANAGER"
                 ) {
 
                     return res.status(400).json({
@@ -409,18 +518,26 @@ router.put("/:id/status", (req, res) => {
 
             // ==================================================
             // REJECT
+            //
+            // PENDING_SUPERVISOR
+            //        ↓
+            // REJECTED
+            //
+            // PENDING_MANAGER
+            //        ↓
+            // REJECTED
             // ==================================================
 
             if (
                 status ===
-                    "REJECTED"
+                "REJECTED"
             ) {
 
                 if (
                     currentStatus !==
-                        "PENDING_SUPERVISOR" &&
+                    "PENDING_SUPERVISOR" &&
                     currentStatus !==
-                        "WAITING_MANAGER_APPROVAL"
+                    "PENDING_MANAGER"
                 ) {
 
                     return res.status(400).json({
@@ -429,6 +546,62 @@ router.put("/:id/status", (req, res) => {
 
                         message:
                             `Request tidak dapat ditolak dari status ${currentStatus}`
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // APPROVED → IN_PROGRESS
+            // ==================================================
+
+            if (
+                status ===
+                "IN_PROGRESS"
+            ) {
+
+                if (
+                    currentStatus !==
+                    "APPROVED"
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            `Maintenance tidak dapat dimulai. Status sekarang: ${currentStatus}`
+
+                    });
+
+                }
+
+            }
+
+
+            // ==================================================
+            // IN_PROGRESS → COMPLETED
+            // ==================================================
+
+            if (
+                status ===
+                "COMPLETED"
+            ) {
+
+                if (
+                    currentStatus !==
+                    "IN_PROGRESS"
+                ) {
+
+                    return res.status(400).json({
+
+                        success: false,
+
+                        message:
+                            `Maintenance belum dapat diselesaikan. Status sekarang: ${currentStatus}`
 
                     });
 
@@ -462,23 +635,29 @@ router.put("/:id/status", (req, res) => {
                         console.error(
                             "========================================"
                         );
+
                         console.error(
                             "DATABASE UPDATE ERROR"
                         );
+
                         console.error(
                             "========================================"
                         );
+
                         console.error(
                             "Code:",
                             updateError.code
                         );
+
                         console.error(
                             "Message:",
                             updateError.message
                         );
+
                         console.error(
                             updateError
                         );
+
                         console.error(
                             "========================================"
                         );
@@ -502,16 +681,37 @@ router.put("/:id/status", (req, res) => {
                     }
 
 
-                    // ------------------------------------------
+                    // ==================================================
+                    // TIDAK ADA BARIS BERUBAH
+                    // ==================================================
+
+                    if (
+                        result.affectedRows === 0
+                    ) {
+
+                        return res.status(404).json({
+
+                            success: false,
+
+                            message:
+                                "Maintenance request tidak ditemukan"
+
+                        });
+
+                    }
+
+
+                    // ==================================================
                     // BERHASIL
-                    // ------------------------------------------
+                    // ==================================================
 
                     console.log("");
+
                     console.log(
                         `Maintenance #${id}: ${currentStatus} → ${status}`
                     );
-                    console.log("");
 
+                    console.log("");
 
                     return res.json({
 
@@ -541,7 +741,7 @@ router.put("/:id/status", (req, res) => {
 
 
 // ======================================================
-// EXPORT ROUTER
+// EXPORT
 // ======================================================
 
 module.exports = router;
