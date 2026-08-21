@@ -242,7 +242,7 @@ const ManagerDashboard = () => {
                 />
 
 
-                {/* MAINTENANCE COST */}
+                {/* MAINTENANCE COST
 
                 <StatCard
                     title="Maintenance Cost"
@@ -254,7 +254,7 @@ const ManagerDashboard = () => {
                         />
                     }
                     variant="orange"
-                />
+                /> */}
 
             </div>
 
