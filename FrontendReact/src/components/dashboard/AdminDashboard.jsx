@@ -20,15 +20,13 @@ import StatCard from "./StatCard";
 import StatusBadge from "./StatusBadge";
 
 
-const API =
-    "http://localhost:3000";
+const API = "http://localhost:3000";
 
 
 const AdminDashboard = () => {
 
-
     // ======================================================
-    // STATE
+    // STATE - DASHBOARD STATISTICS
     // ======================================================
 
     const [
@@ -59,6 +57,32 @@ const AdminDashboard = () => {
     ] = useState("");
 
 
+    // ======================================================
+    // STATE - MAINTENANCE CHART
+    // ======================================================
+
+    const [
+        maintenanceData,
+        setMaintenanceData
+    ] = useState([]);
+
+
+    const [
+        chartLoading,
+        setChartLoading
+    ] = useState(true);
+
+
+    const [
+        chartError,
+        setChartError
+    ] = useState("");
+
+
+    // ======================================================
+    // STATE - NOTIFICATION
+    // ======================================================
+
     const [
         showNotifications,
         setShowNotifications
@@ -70,6 +94,10 @@ const AdminDashboard = () => {
         setSelectedNotification
     ] = useState(null);
 
+
+    // ======================================================
+    // STATE - SYSTEM OVERVIEW
+    // ======================================================
 
     const [
         showSystemOverview,
@@ -138,7 +166,7 @@ const AdminDashboard = () => {
 
 
     // ======================================================
-    // LOAD DASHBOARD
+    // LOAD DASHBOARD STATISTICS
     // ======================================================
 
     const loadDashboardStats =
@@ -146,9 +174,7 @@ const AdminDashboard = () => {
 
             try {
 
-                setStatsLoading(
-                    true
-                );
+                setStatsLoading(true);
 
                 setStatsError("");
 
@@ -217,9 +243,91 @@ const AdminDashboard = () => {
 
             } finally {
 
-                setStatsLoading(
-                    false
+                setStatsLoading(false);
+
+            }
+
+        };
+
+
+    // ======================================================
+    // LOAD MAINTENANCE DATA
+    // ======================================================
+
+    const loadMaintenanceChart =
+        async () => {
+
+            try {
+
+                setChartLoading(true);
+
+                setChartError("");
+
+
+                const response =
+                    await fetch(
+                        `${API}/api/maintenance`
+                    );
+
+
+                const result =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        result.message ||
+                        "Gagal mengambil data maintenance"
+                    );
+
+                }
+
+
+                /*
+                 * Backend kemungkinan mengembalikan:
+                 *
+                 * [
+                 *   {...},
+                 *   {...}
+                 * ]
+                 *
+                 * atau:
+                 *
+                 * {
+                 *   data: [...]
+                 * }
+                 */
+
+
+                const data =
+                    Array.isArray(result)
+                        ? result
+                        : result.data || [];
+
+
+                setMaintenanceData(data);
+
+
+            } catch (error) {
+
+                console.error(
+                    "Maintenance chart error:",
+                    error
                 );
+
+
+                setChartError(
+                    error.message
+                );
+
+
+                setMaintenanceData([]);
+
+
+            } finally {
+
+                setChartLoading(false);
 
             }
 
@@ -233,6 +341,8 @@ const AdminDashboard = () => {
     useEffect(() => {
 
         loadDashboardStats();
+
+        loadMaintenanceChart();
 
     }, []);
 
@@ -256,7 +366,7 @@ const AdminDashboard = () => {
 
 
     // ======================================================
-    // CLOSE NOTIFICATION DETAIL
+    // CLOSE NOTIFICATION
     // ======================================================
 
     const closeNotification =
@@ -278,7 +388,196 @@ const AdminDashboard = () => {
 
             loadDashboardStats();
 
+            loadMaintenanceChart();
+
         };
+
+
+    // ======================================================
+    // CHART - STATUS DATA
+    // ======================================================
+
+    const statusList = [
+
+        {
+            key:
+                "PENDING_SUPERVISOR",
+
+            label:
+                "Pending Supervisor"
+        },
+
+        {
+            key:
+                "PENDING_MANAGER",
+
+            label:
+                "Pending Manager"
+        },
+
+        {
+            key:
+                "APPROVED",
+
+            label:
+                "Approved"
+        },
+
+        {
+            key:
+                "IN_PROGRESS",
+
+            label:
+                "In Progress"
+        },
+
+        {
+            key:
+                "COMPLETED",
+
+            label:
+                "Completed"
+        },
+
+        {
+            key:
+                "REJECTED",
+
+            label:
+                "Rejected"
+        }
+
+    ];
+
+
+    const statusChartData =
+        statusList.map(
+            (item) => {
+
+                const total =
+                    maintenanceData.filter(
+                        (maintenance) => {
+
+                            return (
+                                String(
+                                    maintenance.status ||
+                                    ""
+                                ).toUpperCase() ===
+                                item.key
+                            );
+
+                        }
+                    ).length;
+
+
+                return {
+
+                    ...item,
+
+                    total
+
+                };
+
+            }
+        );
+
+
+    const maxStatus =
+        Math.max(
+            ...statusChartData.map(
+                (item) =>
+                    item.total
+            ),
+            1
+        );
+
+
+    // ======================================================
+    // CHART - MONTHLY DATA
+    // ======================================================
+
+    const currentYear =
+        new Date().getFullYear();
+
+
+    const monthNames = [
+
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+
+    ];
+
+
+    const monthlyChartData =
+        monthNames.map(
+            (
+                month,
+                index
+            ) => {
+
+                const total =
+                    maintenanceData.filter(
+                        (maintenance) => {
+
+                            if (
+                                !maintenance.created_at
+                            ) {
+
+                                return false;
+
+                            }
+
+
+                            const date =
+                                new Date(
+                                    maintenance.created_at
+                                );
+
+
+                            return (
+
+                                date.getFullYear() ===
+                                    currentYear &&
+
+                                date.getMonth() ===
+                                    index
+
+                            );
+
+                        }
+                    ).length;
+
+
+                return {
+
+                    month,
+
+                    total
+
+                };
+
+            }
+        );
+
+
+    const maxMonthly =
+        Math.max(
+            ...monthlyChartData.map(
+                (item) =>
+                    item.total
+            ),
+            1
+        );
 
 
     // ======================================================
@@ -348,9 +647,9 @@ const AdminDashboard = () => {
                 >
 
 
-                    {/* ==========================================
+                    {/* ==================================================
                         NOTIFICATION BUTTON
-                    ========================================== */}
+                    ================================================== */}
 
                     <button
 
@@ -472,9 +771,9 @@ const AdminDashboard = () => {
                     </button>
 
 
-                    {/* ==========================================
+                    {/* ==================================================
                         NOTIFICATION POPUP
-                    ========================================== */}
+                    ================================================== */}
 
                     {showNotifications && (
 
@@ -690,31 +989,37 @@ const AdminDashboard = () => {
 
                                             {notification.type ===
                                                 "maintenance" && (
+
                                                 <Wrench
                                                     size={
                                                         21
                                                     }
                                                 />
+
                                             )}
 
 
                                             {notification.type ===
                                                 "approval" && (
+
                                                 <CheckCircle
                                                     size={
                                                         21
                                                     }
                                                 />
+
                                             )}
 
 
                                             {notification.type ===
                                                 "warning" && (
+
                                                 <AlertTriangle
                                                     size={
                                                         21
                                                     }
                                                 />
+
                                             )}
 
                                         </div>
@@ -837,9 +1142,9 @@ const AdminDashboard = () => {
                     )}
 
 
-                    {/* ==========================================
+                    {/* ==================================================
                         SYSTEM OVERVIEW
-                    ========================================== */}
+                    ================================================== */}
 
                     <button
 
@@ -954,7 +1259,6 @@ const AdminDashboard = () => {
                 className="dashboard-stat-grid"
             >
 
-
                 {/* TOTAL EQUIPMENT */}
 
                 <StatCard
@@ -1057,7 +1361,541 @@ const AdminDashboard = () => {
             </div>
 
 
- 
+            {/* ==================================================
+                MAINTENANCE ANALYTICS
+            ================================================== */}
+
+            <div
+                style={{
+                    display:
+                        "grid",
+
+                    gridTemplateColumns:
+                        "minmax(0, 1.5fr) minmax(0, 1fr)",
+
+                    gap:
+                        "20px",
+
+                    marginTop:
+                        "20px"
+                }}
+            >
+
+
+                {/* ==================================================
+                    MAINTENANCE TREND
+                ================================================== */}
+
+                <div
+                    className="dashboard-card"
+                >
+
+                    <div
+                        className="card-header"
+                    >
+
+                        <div>
+
+                            <h3>
+                                Maintenance Trend
+                            </h3>
+
+                            <p>
+                                Maintenance request per bulan (
+                                {currentYear}
+                                )
+                            </p>
+
+                        </div>
+
+
+                        <Activity
+                            size={20}
+                        />
+
+                    </div>
+
+
+                    {chartError ? (
+
+                        <div
+                            style={{
+                                minHeight:
+                                    "260px",
+
+                                display:
+                                    "flex",
+
+                                alignItems:
+                                    "center",
+
+                                justifyContent:
+                                    "center",
+
+                                color:
+                                    "#dc2626",
+
+                                textAlign:
+                                    "center",
+
+                                padding:
+                                    "20px"
+                            }}
+                        >
+
+                            <div>
+
+                                <AlertTriangle
+                                    size={30}
+                                    style={{
+                                        marginBottom:
+                                            "10px"
+                                    }}
+                                />
+
+                                <p>
+                                    Gagal memuat
+                                    grafik maintenance.
+                                </p>
+
+                                <small>
+                                    {chartError}
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    ) : chartLoading ? (
+
+                        <div
+                            style={{
+                                minHeight:
+                                    "260px",
+
+                                display:
+                                    "flex",
+
+                                alignItems:
+                                    "center",
+
+                                justifyContent:
+                                    "center",
+
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Memuat grafik...
+                        </div>
+
+                    ) : (
+
+                        <div
+                            style={{
+                                height:
+                                    "280px",
+
+                                display:
+                                    "flex",
+
+                                alignItems:
+                                    "flex-end",
+
+                                gap:
+                                    "12px",
+
+                                padding:
+                                    "30px 10px 10px",
+
+                                borderBottom:
+                                    "1px solid #e2e8f0"
+                            }}
+                        >
+
+                            {monthlyChartData.map(
+                                (item) => {
+
+                                    const height =
+                                        item.total === 0
+
+                                            ? 4
+
+                                            : Math.max(
+                                                (
+                                                    item.total /
+                                                    maxMonthly
+                                                ) * 190,
+                                                12
+                                            );
+
+
+                                    return (
+
+                                        <div
+                                            key={
+                                                item.month
+                                            }
+
+                                            style={{
+                                                flex:
+                                                    1,
+
+                                                height:
+                                                    "100%",
+
+                                                display:
+                                                    "flex",
+
+                                                flexDirection:
+                                                    "column",
+
+                                                justifyContent:
+                                                    "flex-end",
+
+                                                alignItems:
+                                                    "center",
+
+                                                gap:
+                                                    "8px"
+                                            }}
+                                        >
+
+                                            {/* VALUE */}
+
+                                            <span
+                                                style={{
+                                                    fontSize:
+                                                        "12px",
+
+                                                    fontWeight:
+                                                        "600",
+
+                                                    color:
+                                                        "#475569"
+                                                }}
+                                            >
+                                                {
+                                                    item.total
+                                                }
+                                            </span>
+
+
+                                            {/* BAR */}
+
+                                            <div
+                                                title={`${item.total} maintenance`}
+                                                style={{
+                                                    width:
+                                                        "100%",
+
+                                                    maxWidth:
+                                                        "42px",
+
+                                                    height:
+                                                        `${height}px`,
+
+                                                    minHeight:
+                                                        "4px",
+
+                                                    borderRadius:
+                                                        "8px 8px 3px 3px",
+
+                                                    background:
+                                                        "linear-gradient(180deg, #2563eb, #60a5fa)",
+
+                                                    transition:
+                                                        "height .3s ease"
+                                                }}
+                                            />
+
+
+                                            {/* MONTH */}
+
+                                            <span
+                                                style={{
+                                                    fontSize:
+                                                        "11px",
+
+                                                    color:
+                                                        "#64748b"
+                                                }}
+                                            >
+                                                {
+                                                    item.month
+                                                }
+                                            </span>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+
+                {/* ==================================================
+                    MAINTENANCE STATUS
+                ================================================== */}
+
+                <div
+                    className="dashboard-card"
+                >
+
+                    <div
+                        className="card-header"
+                    >
+
+                        <div>
+
+                            <h3>
+                                Maintenance Status
+                            </h3>
+
+                            <p>
+                                Distribusi status maintenance
+                            </p>
+
+                        </div>
+
+
+                        <Wrench
+                            size={20}
+                        />
+
+                    </div>
+
+
+                    {chartError ? (
+
+                        <div
+                            style={{
+                                minHeight:
+                                    "260px",
+
+                                display:
+                                    "flex",
+
+                                alignItems:
+                                    "center",
+
+                                justifyContent:
+                                    "center",
+
+                                color:
+                                    "#dc2626",
+
+                                textAlign:
+                                    "center"
+                            }}
+                        >
+
+                            <AlertTriangle
+                                size={28}
+                            />
+
+                        </div>
+
+                    ) : chartLoading ? (
+
+                        <div
+                            style={{
+                                minHeight:
+                                    "260px",
+
+                                display:
+                                    "flex",
+
+                                alignItems:
+                                    "center",
+
+                                justifyContent:
+                                    "center",
+
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Memuat grafik...
+                        </div>
+
+                    ) : (
+
+                        <div
+                            style={{
+                                marginTop:
+                                    "20px"
+                            }}
+                        >
+
+                            {statusChartData.map(
+                                (item) => {
+
+                                    const percentage =
+                                        item.total ===
+                                        0
+
+                                            ? 0
+
+                                            : (
+                                                item.total /
+                                                maxStatus
+                                            ) * 100;
+
+
+                                    return (
+
+                                        <div
+                                            key={
+                                                item.key
+                                            }
+
+                                            style={{
+                                                marginBottom:
+                                                    "17px"
+                                            }}
+                                        >
+
+                                            {/* LABEL */}
+
+                                            <div
+                                                style={{
+                                                    display:
+                                                        "flex",
+
+                                                    justifyContent:
+                                                        "space-between",
+
+                                                    marginBottom:
+                                                        "7px"
+                                                }}
+                                            >
+
+                                                <span
+                                                    style={{
+                                                        fontSize:
+                                                            "13px",
+
+                                                        fontWeight:
+                                                            "600",
+
+                                                        color:
+                                                            "#334155"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.label
+                                                    }
+                                                </span>
+
+
+                                                <span
+                                                    style={{
+                                                        fontSize:
+                                                            "13px",
+
+                                                        fontWeight:
+                                                            "700",
+
+                                                        color:
+                                                            "#0f172a"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.total
+                                                    }
+                                                </span>
+
+                                            </div>
+
+
+                                            {/* PROGRESS */}
+
+                                            <div
+                                                style={{
+                                                    width:
+                                                        "100%",
+
+                                                    height:
+                                                        "8px",
+
+                                                    borderRadius:
+                                                        "999px",
+
+                                                    background:
+                                                        "#e2e8f0",
+
+                                                    overflow:
+                                                        "hidden"
+                                                }}
+                                            >
+
+                                                <div
+                                                    style={{
+                                                        width:
+                                                            `${percentage}%`,
+
+                                                        height:
+                                                            "100%",
+
+                                                        borderRadius:
+                                                            "999px",
+
+                                                        background:
+                                                            item.key ===
+                                                            "COMPLETED"
+
+                                                                ? "#16a34a"
+
+                                                                : item.key ===
+                                                                  "REJECTED"
+
+                                                                ? "#dc2626"
+
+                                                                : item.key ===
+                                                                  "IN_PROGRESS"
+
+                                                                ? "#ea580c"
+
+                                                                : item.key ===
+                                                                  "APPROVED"
+
+                                                                ? "#2563eb"
+
+                                                                : item.key ===
+                                                                  "PENDING_MANAGER"
+
+                                                                ? "#9333ea"
+
+                                                                : "#7c3aed",
+
+                                                        transition:
+                                                            "width .3s ease"
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+            </div>
 
 
             {/* ==================================================
@@ -1111,6 +1949,8 @@ const AdminDashboard = () => {
                     }}
                 >
 
+                    {/* ACTIVE SYSTEM */}
+
                     <div
                         style={{
                             padding:
@@ -1154,6 +1994,8 @@ const AdminDashboard = () => {
 
                     </div>
 
+
+                    {/* DATABASE */}
 
                     <div
                         style={{
@@ -1773,7 +2615,16 @@ const AdminDashboard = () => {
                                         "#f1f5f9",
 
                                     cursor:
-                                        "pointer"
+                                        "pointer",
+
+                                    display:
+                                        "flex",
+
+                                    alignItems:
+                                        "center",
+
+                                    justifyContent:
+                                        "center"
                                 }}
                             >
 
@@ -1873,6 +2724,8 @@ const AdminDashboard = () => {
                             }}
                         >
 
+                            {/* EQUIPMENT */}
+
                             <div
                                 style={{
                                     padding:
@@ -1908,6 +2761,8 @@ const AdminDashboard = () => {
 
                             </div>
 
+
+                            {/* ACTIVE */}
 
                             <div
                                 style={{
@@ -1945,6 +2800,8 @@ const AdminDashboard = () => {
                             </div>
 
 
+                            {/* PENDING */}
+
                             <div
                                 style={{
                                     padding:
@@ -1980,6 +2837,8 @@ const AdminDashboard = () => {
 
                             </div>
 
+
+                            {/* COMPLETED */}
 
                             <div
                                 style={{
