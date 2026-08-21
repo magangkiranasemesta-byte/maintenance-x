@@ -13,339 +13,484 @@ import {
     Users,
     Settings,
     X,
-    Bell
+    Bell,
+    RefreshCw,
+    UserCheck
 } from "lucide-react";
 
 import StatCard from "./StatCard";
-import StatusBadge from "./StatusBadge";
-
 
 const API = "http://localhost:3000";
-
 
 const AdminDashboard = () => {
 
     // ======================================================
-    // STATE - DASHBOARD STATISTICS
+    // DASHBOARD DATA
     // ======================================================
 
-    const [
-        dashboardStats,
-        setDashboardStats
-    ] = useState({
+    const [dashboardData, setDashboardData] = useState({
+        stats: {
+            totalEquipment: 0,
+            activeMaintenance: 0,
+            pendingApproval: 0,
+            completed: 0,
+            rejected: 0,
+            totalMaintenance: 0,
+            completionRate: 0,
+            equipmentUptime: null,
+            onTimeMaintenance: null
+        },
 
-        totalEquipment: 0,
+        maintenanceTrend: [],
 
-        activeMaintenance: 0,
+        maintenanceStatus: [],
 
-        pendingApproval: 0,
+        equipmentHealth: {
+            good: 0,
+            warning: 0,
+            critical: 0,
+            goodPercentage: 0
+        },
 
-        completed: 0
+        approvalHistory: [],
 
+        recentMaintenance: []
     });
 
-
-    const [
-        statsLoading,
-        setStatsLoading
-    ] = useState(true);
-
-
-    const [
-        statsError,
-        setStatsError
-    ] = useState("");
-
-
     // ======================================================
-    // STATE - MAINTENANCE CHART
+    // LOADING / ERROR
     // ======================================================
 
-    const [
-        maintenanceData,
-        setMaintenanceData
-    ] = useState([]);
-
-
-    const [
-        chartLoading,
-        setChartLoading
-    ] = useState(true);
-
-
-    const [
-        chartError,
-        setChartError
-    ] = useState("");
-
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     // ======================================================
-    // STATE - NOTIFICATION
+    // MODAL
     // ======================================================
 
-    const [
-        showNotifications,
-        setShowNotifications
-    ] = useState(false);
+    const [showNotifications, setShowNotifications] =
+        useState(false);
 
+    const [selectedNotification, setSelectedNotification] =
+        useState(null);
 
-    const [
-        selectedNotification,
-        setSelectedNotification
-    ] = useState(null);
-
+    const [showSystemOverview, setShowSystemOverview] =
+        useState(false);
 
     // ======================================================
-    // STATE - SYSTEM OVERVIEW
+    // LOAD DASHBOARD
     // ======================================================
 
-    const [
-        showSystemOverview,
-        setShowSystemOverview
-    ] = useState(false);
+    const loadDashboard = async () => {
+        try {
+            setLoading(true);
+            setError("");
 
+            const response = await fetch(
+                `${API}/api/dashboard/stats`
+            );
 
-    // ======================================================
-    // NOTIFICATIONS
-    // ======================================================
+            const result = await response.json();
 
-    const notifications = [
+            console.log(
+                "================================="
+            );
 
-        {
-            id: 1,
+            console.log(
+                "DASHBOARD DATABASE RESPONSE:",
+                result
+            );
 
-            title:
-                "New maintenance request",
+            console.log(
+                "================================="
+            );
 
-            description:
-                "Ada maintenance request baru.",
+            if (!response.ok) {
+                throw new Error(
+                    result.message ||
+                    "Gagal mengambil data dashboard"
+                );
+            }
 
-            time:
-                "10 minutes ago",
+            if (!result.success) {
+                throw new Error(
+                    result.message ||
+                    "Data dashboard tidak valid"
+                );
+            }
 
-            type:
-                "maintenance"
-
-        },
-
-        {
-            id: 2,
-
-            title:
-                "Maintenance approved",
-
-            description:
-                "Maintenance request telah disetujui.",
-
-            time:
-                "1 hour ago",
-
-            type:
-                "approval"
-
-        },
-
-        {
-            id: 3,
-
-            title:
-                "Equipment requires attention",
-
-            description:
-                "Ada equipment yang membutuhkan perhatian.",
-
-            time:
-                "2 hours ago",
-
-            type:
-                "warning"
-
-        }
-
-    ];
-
-
-    // ======================================================
-    // LOAD DASHBOARD STATISTICS
-    // ======================================================
-
-    const loadDashboardStats =
-        async () => {
-
-            try {
-
-                setStatsLoading(true);
-
-                setStatsError("");
-
-
-                const response =
-                    await fetch(
-                        `${API}/api/dashboard/stats`
-                    );
-
-
-                const result =
-                    await response.json();
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        result.message ||
-                        "Gagal mengambil statistik dashboard"
-                    );
-
-                }
-
-
-                setDashboardStats({
-
+            setDashboardData({
+                stats: {
                     totalEquipment:
                         Number(
-                            result.totalEquipment ||
-                            0
+                            result.stats?.totalEquipment || 0
                         ),
 
                     activeMaintenance:
                         Number(
-                            result.activeMaintenance ||
-                            0
+                            result.stats?.activeMaintenance || 0
                         ),
 
                     pendingApproval:
                         Number(
-                            result.pendingApproval ||
-                            0
+                            result.stats?.pendingApproval || 0
                         ),
 
                     completed:
                         Number(
-                            result.completed ||
-                            0
-                        )
+                            result.stats?.completed || 0
+                        ),
 
-                });
+                    rejected:
+                        Number(
+                            result.stats?.rejected || 0
+                        ),
 
+                    totalMaintenance:
+                        Number(
+                            result.stats?.totalMaintenance || 0
+                        ),
 
-            } catch (error) {
+                    completionRate:
+                        Number(
+                            result.stats?.completionRate || 0
+                        ),
 
-                console.error(
-                    "Dashboard error:",
-                    error
-                );
+                    equipmentUptime:
+                        result.stats?.equipmentUptime ??
+                        null,
 
+                    onTimeMaintenance:
+                        result.stats?.onTimeMaintenance ??
+                        null
+                },
 
-                setStatsError(
-                    error.message
-                );
+                maintenanceTrend:
+                    Array.isArray(
+                        result.maintenanceTrend
+                    )
+                        ? result.maintenanceTrend
+                        : [],
 
+                maintenanceStatus:
+                    Array.isArray(
+                        result.maintenanceStatus
+                    )
+                        ? result.maintenanceStatus
+                        : [],
 
-            } finally {
+                equipmentHealth:
+                    result.equipmentHealth || {
+                        good: 0,
+                        warning: 0,
+                        critical: 0,
+                        goodPercentage: 0
+                    },
 
-                setStatsLoading(false);
+                approvalHistory:
+                    Array.isArray(
+                        result.approvalHistory
+                    )
+                        ? result.approvalHistory
+                        : [],
 
-            }
+                recentMaintenance:
+                    Array.isArray(
+                        result.recentMaintenance
+                    )
+                        ? result.recentMaintenance
+                        : []
+            });
 
-        };
+        } catch (err) {
 
+            console.error(
+                "DASHBOARD ERROR:",
+                err
+            );
 
-    // ======================================================
-    // LOAD MAINTENANCE DATA
-    // ======================================================
+            setError(
+                err.message ||
+                "Gagal mengambil data dashboard"
+            );
 
-    const loadMaintenanceChart =
-        async () => {
-
-            try {
-
-                setChartLoading(true);
-
-                setChartError("");
-
-
-                const response =
-                    await fetch(
-                        `${API}/api/maintenance`
-                    );
-
-
-                const result =
-                    await response.json();
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        result.message ||
-                        "Gagal mengambil data maintenance"
-                    );
-
-                }
-
-
-                /*
-                 * Backend kemungkinan mengembalikan:
-                 *
-                 * [
-                 *   {...},
-                 *   {...}
-                 * ]
-                 *
-                 * atau:
-                 *
-                 * {
-                 *   data: [...]
-                 * }
-                 */
-
-
-                const data =
-                    Array.isArray(result)
-                        ? result
-                        : result.data || [];
-
-
-                setMaintenanceData(data);
-
-
-            } catch (error) {
-
-                console.error(
-                    "Maintenance chart error:",
-                    error
-                );
-
-
-                setChartError(
-                    error.message
-                );
-
-
-                setMaintenanceData([]);
-
-
-            } finally {
-
-                setChartLoading(false);
-
-            }
-
-        };
-
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // ======================================================
     // INITIAL LOAD
     // ======================================================
 
     useEffect(() => {
-
-        loadDashboardStats();
-
-        loadMaintenanceChart();
-
+        loadDashboard();
     }, []);
 
+    // ======================================================
+    // STATUS COUNT
+    // ======================================================
+
+    const getStatusCount = (status) => {
+
+        const item =
+            dashboardData.maintenanceStatus.find(
+                (row) =>
+                    String(
+                        row.status || ""
+                    ).toUpperCase() ===
+                    status
+            );
+
+        return Number(
+            item?.total || 0
+        );
+    };
+
+    // ======================================================
+    // STATUS LIST
+    // ======================================================
+
+    const statusList = [
+        {
+            key: "PENDING_SUPERVISOR",
+            label: "Pending Supervisor"
+        },
+        {
+            key: "PENDING_MANAGER",
+            label: "Pending Manager"
+        },
+        {
+            key: "APPROVED",
+            label: "Approved"
+        },
+        {
+            key: "IN_PROGRESS",
+            label: "In Progress"
+        },
+        {
+            key: "COMPLETED",
+            label: "Completed"
+        },
+        {
+            key: "REJECTED",
+            label: "Rejected"
+        }
+    ];
+
+    const statusChartData =
+        statusList.map((item) => ({
+            ...item,
+            total: getStatusCount(item.key)
+        }));
+
+    const maxStatus = Math.max(
+        ...statusChartData.map(
+            (item) => item.total
+        ),
+        1
+    );
+
+    // ======================================================
+    // MONTHLY DATA
+    // ======================================================
+
+    const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+    ];
+
+    const maintenanceTrend =
+        monthNames.map((month, index) => {
+
+            const found =
+                dashboardData.maintenanceTrend.find(
+                    (item) =>
+                        Number(
+                            item.month_number
+                        ) === index + 1 ||
+                        item.month === month
+                );
+
+            return {
+                month,
+                total:
+                    Number(
+                        found?.total || 0
+                    )
+            };
+        });
+
+    const maxMonthly = Math.max(
+        ...maintenanceTrend.map(
+            (item) => item.total
+        ),
+        1
+    );
+
+    // ======================================================
+    // EQUIPMENT HEALTH
+    // ======================================================
+
+    const equipmentHealth =
+        dashboardData.equipmentHealth;
+
+    const goodEquipment =
+        Number(
+            equipmentHealth.good || 0
+        );
+
+    const warningEquipment =
+        Number(
+            equipmentHealth.warning || 0
+        );
+
+    const criticalEquipment =
+        Number(
+            equipmentHealth.critical || 0
+        );
+
+    const goodPercentage =
+        Number(
+            equipmentHealth.goodPercentage || 0
+        );
+
+    // ======================================================
+    // NOTIFICATION DATA
+    //
+    // Semua dibuat dari database.
+    // ======================================================
+
+    const notifications = [];
+
+    // ------------------------------------------------------
+    // NEW MAINTENANCE
+    // ------------------------------------------------------
+
+    const newestMaintenance =
+        dashboardData.recentMaintenance[0];
+
+    if (newestMaintenance) {
+
+        notifications.push({
+            id:
+                `maintenance-${newestMaintenance.id}`,
+
+            title:
+                "New maintenance request",
+
+            description:
+                newestMaintenance.equipment_name
+                    ? `${newestMaintenance.equipment_name} memiliki maintenance request baru.`
+                    : "Ada maintenance request baru.",
+
+            time:
+                newestMaintenance.created_at,
+
+            type:
+                "maintenance",
+
+            detail:
+                newestMaintenance.description ||
+                "Maintenance request baru."
+        });
+    }
+
+    // ------------------------------------------------------
+    // APPROVAL HISTORY
+    // ------------------------------------------------------
+
+    const newestApproval =
+        dashboardData.approvalHistory[0];
+
+    if (newestApproval) {
+
+        notifications.push({
+            id:
+                `approval-${newestApproval.id}`,
+
+            title:
+                `${newestApproval.role || "User"} ${newestApproval.action || "Approval"}`,
+
+            description:
+                newestApproval.note ||
+                `Maintenance #${newestApproval.maintenance_id} memiliki aktivitas approval.`,
+
+            time:
+                newestApproval.created_at,
+
+            type:
+                "approval",
+
+            detail:
+                `Maintenance #${newestApproval.maintenance_id} - ${newestApproval.action}`
+        });
+    }
+
+    // ------------------------------------------------------
+    // EQUIPMENT WARNING
+    // ------------------------------------------------------
+
+    if (warningEquipment > 0) {
+
+        notifications.push({
+            id:
+                "equipment-warning",
+
+            title:
+                "Equipment requires attention",
+
+            description:
+                `${warningEquipment} equipment sedang dalam status maintenance.`,
+
+            time:
+                new Date(),
+
+            type:
+                "warning",
+
+            detail:
+                `${warningEquipment} equipment berada dalam kategori warning.`
+        });
+    }
+
+    // ======================================================
+    // FORMAT TIME
+    // ======================================================
+
+    const formatTime = (dateValue) => {
+
+        if (!dateValue) {
+            return "-";
+        }
+
+        const date =
+            new Date(dateValue);
+
+        if (Number.isNaN(
+            date.getTime()
+        )) {
+            return "-";
+        }
+
+        return date.toLocaleString(
+            "id-ID",
+            {
+                dateStyle: "medium",
+                timeStyle: "short"
+            }
+        );
+    };
 
     // ======================================================
     // NOTIFICATION CLICK
@@ -361,233 +506,33 @@ const AdminDashboard = () => {
             setShowNotifications(
                 false
             );
-
         };
-
 
     // ======================================================
     // CLOSE NOTIFICATION
     // ======================================================
 
-    const closeNotification =
-        () => {
+    const closeNotification = () => {
 
-            setSelectedNotification(
-                null
-            );
-
-        };
-
-
-    // ======================================================
-    // REFRESH DASHBOARD
-    // ======================================================
-
-    const refreshDashboard =
-        () => {
-
-            loadDashboardStats();
-
-            loadMaintenanceChart();
-
-        };
-
-
-    // ======================================================
-    // CHART - STATUS DATA
-    // ======================================================
-
-    const statusList = [
-
-        {
-            key:
-                "PENDING_SUPERVISOR",
-
-            label:
-                "Pending Supervisor"
-        },
-
-        {
-            key:
-                "PENDING_MANAGER",
-
-            label:
-                "Pending Manager"
-        },
-
-        {
-            key:
-                "APPROVED",
-
-            label:
-                "Approved"
-        },
-
-        {
-            key:
-                "IN_PROGRESS",
-
-            label:
-                "In Progress"
-        },
-
-        {
-            key:
-                "COMPLETED",
-
-            label:
-                "Completed"
-        },
-
-        {
-            key:
-                "REJECTED",
-
-            label:
-                "Rejected"
-        }
-
-    ];
-
-
-    const statusChartData =
-        statusList.map(
-            (item) => {
-
-                const total =
-                    maintenanceData.filter(
-                        (maintenance) => {
-
-                            return (
-                                String(
-                                    maintenance.status ||
-                                    ""
-                                ).toUpperCase() ===
-                                item.key
-                            );
-
-                        }
-                    ).length;
-
-
-                return {
-
-                    ...item,
-
-                    total
-
-                };
-
-            }
+        setSelectedNotification(
+            null
         );
-
-
-    const maxStatus =
-        Math.max(
-            ...statusChartData.map(
-                (item) =>
-                    item.total
-            ),
-            1
-        );
-
+    };
 
     // ======================================================
-    // CHART - MONTHLY DATA
+    // REFRESH
     // ======================================================
 
-    const currentYear =
-        new Date().getFullYear();
-
-
-    const monthNames = [
-
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec"
-
-    ];
-
-
-    const monthlyChartData =
-        monthNames.map(
-            (
-                month,
-                index
-            ) => {
-
-                const total =
-                    maintenanceData.filter(
-                        (maintenance) => {
-
-                            if (
-                                !maintenance.created_at
-                            ) {
-
-                                return false;
-
-                            }
-
-
-                            const date =
-                                new Date(
-                                    maintenance.created_at
-                                );
-
-
-                            return (
-
-                                date.getFullYear() ===
-                                    currentYear &&
-
-                                date.getMonth() ===
-                                    index
-
-                            );
-
-                        }
-                    ).length;
-
-
-                return {
-
-                    month,
-
-                    total
-
-                };
-
-            }
-        );
-
-
-    const maxMonthly =
-        Math.max(
-            ...monthlyChartData.map(
-                (item) =>
-                    item.total
-            ),
-            1
-        );
-
+    const refreshDashboard = () => {
+        loadDashboard();
+    };
 
     // ======================================================
     // RENDER
     // ======================================================
 
     return (
-
         <div className="role-dashboard">
-
 
             {/* ==================================================
                 HEADER
@@ -596,8 +541,7 @@ const AdminDashboard = () => {
             <div
                 className="dashboard-header"
                 style={{
-                    position:
-                        "relative"
+                    position: "relative"
                 }}
             >
 
@@ -605,21 +549,15 @@ const AdminDashboard = () => {
 
                 <div>
 
-                    <p
-                        className="dashboard-label"
-                    >
+                    <p className="dashboard-label">
                         ADMIN PANEL
                     </p>
-
 
                     <h1>
                         Admin Dashboard
                     </h1>
 
-
-                    <p
-                        className="dashboard-description"
-                    >
+                    <p className="dashboard-description">
                         Monitor seluruh aktivitas
                         equipment dan maintenance
                         system.
@@ -627,34 +565,23 @@ const AdminDashboard = () => {
 
                 </div>
 
-
                 {/* RIGHT */}
 
                 <div
                     style={{
-                        display:
-                            "flex",
-
-                        alignItems:
-                            "center",
-
-                        gap:
-                            "12px",
-
-                        position:
-                            "relative"
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        position: "relative"
                     }}
                 >
 
-
                     {/* ==================================================
-                        NOTIFICATION BUTTON
+                        NOTIFICATION
                     ================================================== */}
 
                     <button
-
                         type="button"
-
                         onClick={() => {
 
                             setShowNotifications(
@@ -664,99 +591,42 @@ const AdminDashboard = () => {
                             setSelectedNotification(
                                 null
                             );
-
                         }}
-
                         style={{
-                            position:
-                                "relative",
-
-                            width:
-                                "58px",
-
-                            height:
-                                "58px",
-
+                            position: "relative",
+                            width: "58px",
+                            height: "58px",
                             border:
                                 "1px solid #dbe3ef",
-
-                            borderRadius:
-                                "14px",
-
-                            background:
-                                "#ffffff",
-
-                            display:
-                                "flex",
-
-                            alignItems:
-                                "center",
-
-                            justifyContent:
-                                "center",
-
-                            cursor:
-                                "pointer",
-
-                            color:
-                                "#475569"
+                            borderRadius: "14px",
+                            background: "#ffffff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            color: "#475569"
                         }}
                     >
 
-                        <Bell
-                            size={23}
-                        />
+                        <Bell size={23} />
 
-
-                        {/* BADGE */}
-
-                        {notifications.length >
-                            0 && (
-
+                        {notifications.length > 0 && (
                             <span
                                 style={{
-                                    position:
-                                        "absolute",
-
-                                    top:
-                                        "5px",
-
-                                    right:
-                                        "5px",
-
-                                    minWidth:
-                                        "21px",
-
-                                    height:
-                                        "21px",
-
-                                    padding:
-                                        "0 5px",
-
-                                    borderRadius:
-                                        "50%",
-
-                                    background:
-                                        "#ef4444",
-
-                                    color:
-                                        "#ffffff",
-
-                                    fontSize:
-                                        "11px",
-
-                                    fontWeight:
-                                        "700",
-
-                                    display:
-                                        "flex",
-
-                                    alignItems:
-                                        "center",
-
-                                    justifyContent:
-                                        "center",
-
+                                    position: "absolute",
+                                    top: "5px",
+                                    right: "5px",
+                                    minWidth: "21px",
+                                    height: "21px",
+                                    padding: "0 5px",
+                                    borderRadius: "50%",
+                                    background: "#ef4444",
+                                    color: "#ffffff",
+                                    fontSize: "11px",
+                                    fontWeight: "700",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                     border:
                                         "2px solid #ffffff"
                                 }}
@@ -765,11 +635,9 @@ const AdminDashboard = () => {
                                     notifications.length
                                 }
                             </span>
-
                         )}
 
                     </button>
-
 
                     {/* ==================================================
                         NOTIFICATION POPUP
@@ -779,54 +647,30 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                position:
-                                    "absolute",
-
-                                top:
-                                    "68px",
-
-                                right:
-                                    "150px",
-
-                                width:
-                                    "390px",
-
-                                background:
-                                    "#ffffff",
-
+                                position: "absolute",
+                                top: "68px",
+                                right: "150px",
+                                width: "390px",
+                                background: "#ffffff",
                                 border:
                                     "1px solid #e2e8f0",
-
-                                borderRadius:
-                                    "16px",
-
+                                borderRadius: "16px",
                                 boxShadow:
                                     "0 20px 50px rgba(15,23,42,.18)",
-
-                                overflow:
-                                    "hidden",
-
-                                zIndex:
-                                    5000
+                                overflow: "hidden",
+                                zIndex: 5000
                             }}
                         >
-
-                            {/* HEADER */}
 
                             <div
                                 style={{
                                     padding:
                                         "18px 20px",
-
                                     borderBottom:
                                         "1px solid #e2e8f0",
-
-                                    display:
-                                        "flex",
-
+                                    display: "flex",
                                     justifyContent:
                                         "space-between",
-
                                     alignItems:
                                         "center"
                                 }}
@@ -836,12 +680,9 @@ const AdminDashboard = () => {
 
                                     <h3
                                         style={{
-                                            margin:
-                                                "0",
-
+                                            margin: 0,
                                             color:
                                                 "#0f172a",
-
                                             fontSize:
                                                 "19px"
                                         }}
@@ -849,28 +690,23 @@ const AdminDashboard = () => {
                                         Notifications
                                     </h3>
 
-
                                     <p
                                         style={{
                                             margin:
                                                 "4px 0 0",
-
                                             color:
                                                 "#64748b",
-
                                             fontSize:
                                                 "13px"
                                         }}
                                     >
-                                        You have{" "}
                                         {
                                             notifications.length
                                         }{" "}
-                                        new notifications
+                                        notification
                                     </p>
 
                                 </div>
-
 
                                 <Bell
                                     size={23}
@@ -879,257 +715,198 @@ const AdminDashboard = () => {
 
                             </div>
 
+                            {notifications.length === 0 ? (
 
-                            {/* LIST */}
+                                <div
+                                    style={{
+                                        padding: "30px",
+                                        textAlign: "center",
+                                        color:
+                                            "#64748b"
+                                    }}
+                                >
+                                    Belum ada
+                                    notification.
+                                </div>
 
-                            {notifications.map(
-                                (
-                                    notification
-                                ) => (
+                            ) : (
 
-                                    <button
+                                notifications.map(
+                                    (notification) => (
 
-                                        key={
-                                            notification.id
-                                        }
-
-                                        type="button"
-
-                                        onClick={() =>
-                                            handleNotificationClick(
-                                                notification
-                                            )
-                                        }
-
-                                        style={{
-                                            width:
-                                                "100%",
-
-                                            border:
-                                                "none",
-
-                                            borderBottom:
-                                                "1px solid #f1f5f9",
-
-                                            background:
-                                                "#ffffff",
-
-                                            padding:
-                                                "17px 20px",
-
-                                            display:
-                                                "flex",
-
-                                            gap:
-                                                "14px",
-
-                                            alignItems:
-                                                "flex-start",
-
-                                            textAlign:
-                                                "left",
-
-                                            cursor:
-                                                "pointer"
-                                        }}
-                                    >
-
-                                        {/* ICON */}
-
-                                        <div
+                                        <button
+                                            key={
+                                                notification.id
+                                            }
+                                            type="button"
+                                            onClick={() =>
+                                                handleNotificationClick(
+                                                    notification
+                                                )
+                                            }
                                             style={{
-                                                width:
-                                                    "44px",
-
-                                                height:
-                                                    "44px",
-
-                                                flexShrink:
-                                                    0,
-
-                                                borderRadius:
-                                                    "12px",
-
-                                                display:
-                                                    "flex",
-
-                                                alignItems:
-                                                    "center",
-
-                                                justifyContent:
-                                                    "center",
-
+                                                width: "100%",
+                                                border: "none",
+                                                borderBottom:
+                                                    "1px solid #f1f5f9",
                                                 background:
-                                                    notification.type ===
-                                                    "maintenance"
-
-                                                        ? "#eff6ff"
-
-                                                        : notification.type ===
-                                                          "approval"
-
-                                                        ? "#f0fdf4"
-
-                                                        : "#fff7ed",
-
-                                                color:
-                                                    notification.type ===
-                                                    "maintenance"
-
-                                                        ? "#2563eb"
-
-                                                        : notification.type ===
-                                                          "approval"
-
-                                                        ? "#16a34a"
-
-                                                        : "#ea580c"
+                                                    "#ffffff",
+                                                padding:
+                                                    "17px 20px",
+                                                display: "flex",
+                                                gap: "14px",
+                                                alignItems:
+                                                    "flex-start",
+                                                textAlign:
+                                                    "left",
+                                                cursor:
+                                                    "pointer"
                                             }}
                                         >
 
-                                            {notification.type ===
-                                                "maintenance" && (
-
-                                                <Wrench
-                                                    size={
-                                                        21
-                                                    }
-                                                />
-
-                                            )}
-
-
-                                            {notification.type ===
-                                                "approval" && (
-
-                                                <CheckCircle
-                                                    size={
-                                                        21
-                                                    }
-                                                />
-
-                                            )}
-
-
-                                            {notification.type ===
-                                                "warning" && (
-
-                                                <AlertTriangle
-                                                    size={
-                                                        21
-                                                    }
-                                                />
-
-                                            )}
-
-                                        </div>
-
-
-                                        {/* CONTENT */}
-
-                                        <div>
-
-                                            <strong
+                                            <div
                                                 style={{
+                                                    width:
+                                                        "44px",
+                                                    height:
+                                                        "44px",
+                                                    flexShrink:
+                                                        0,
+                                                    borderRadius:
+                                                        "12px",
                                                     display:
-                                                        "block",
-
+                                                        "flex",
+                                                    alignItems:
+                                                        "center",
+                                                    justifyContent:
+                                                        "center",
+                                                    background:
+                                                        notification.type ===
+                                                        "maintenance"
+                                                            ? "#eff6ff"
+                                                            : notification.type ===
+                                                              "approval"
+                                                            ? "#f0fdf4"
+                                                            : "#fff7ed",
                                                     color:
-                                                        "#0f172a",
-
-                                                    fontSize:
-                                                        "15px",
-
-                                                    marginBottom:
-                                                        "5px"
+                                                        notification.type ===
+                                                        "maintenance"
+                                                            ? "#2563eb"
+                                                            : notification.type ===
+                                                              "approval"
+                                                            ? "#16a34a"
+                                                            : "#ea580c"
                                                 }}
                                             >
-                                                {
-                                                    notification.title
-                                                }
-                                            </strong>
 
+                                                {notification.type ===
+                                                    "maintenance" && (
+                                                    <Wrench
+                                                        size={
+                                                            21
+                                                        }
+                                                    />
+                                                )}
 
-                                            <span
-                                                style={{
-                                                    display:
-                                                        "block",
+                                                {notification.type ===
+                                                    "approval" && (
+                                                    <CheckCircle
+                                                        size={
+                                                            21
+                                                        }
+                                                    />
+                                                )}
 
-                                                    color:
-                                                        "#475569",
+                                                {notification.type ===
+                                                    "warning" && (
+                                                    <AlertTriangle
+                                                        size={
+                                                            21
+                                                        }
+                                                    />
+                                                )}
 
-                                                    fontSize:
-                                                        "14px"
-                                                }}
-                                            >
-                                                {
-                                                    notification.description
-                                                }
-                                            </span>
+                                            </div>
 
+                                            <div>
 
-                                            <small
-                                                style={{
-                                                    display:
-                                                        "block",
+                                                <strong
+                                                    style={{
+                                                        display:
+                                                            "block",
+                                                        color:
+                                                            "#0f172a",
+                                                        fontSize:
+                                                            "15px",
+                                                        marginBottom:
+                                                            "5px"
+                                                    }}
+                                                >
+                                                    {
+                                                        notification.title
+                                                    }
+                                                </strong>
 
-                                                    marginTop:
-                                                        "5px",
+                                                <span
+                                                    style={{
+                                                        display:
+                                                            "block",
+                                                        color:
+                                                            "#475569",
+                                                        fontSize:
+                                                            "14px"
+                                                    }}
+                                                >
+                                                    {
+                                                        notification.description
+                                                    }
+                                                </span>
 
-                                                    color:
-                                                        "#94a3b8"
-                                                }}
-                                            >
-                                                {
-                                                    notification.time
-                                                }
-                                            </small>
+                                                <small
+                                                    style={{
+                                                        display:
+                                                            "block",
+                                                        marginTop:
+                                                            "5px",
+                                                        color:
+                                                            "#94a3b8"
+                                                    }}
+                                                >
+                                                    {
+                                                        formatTime(
+                                                            notification.time
+                                                        )
+                                                    }
+                                                </small>
 
-                                        </div>
+                                            </div>
 
-                                    </button>
-
+                                        </button>
+                                    )
                                 )
                             )}
 
-
-                            {/* FOOTER */}
-
                             <div
                                 style={{
-                                    padding:
-                                        "13px",
-
-                                    textAlign:
-                                        "center"
+                                    padding: "13px",
+                                    textAlign: "center"
                                 }}
                             >
 
                                 <button
-
                                     type="button"
-
                                     onClick={() =>
                                         setShowNotifications(
                                             false
                                         )
                                     }
-
                                     style={{
-                                        border:
-                                            "none",
-
+                                        border: "none",
                                         background:
                                             "transparent",
-
-                                        color:
-                                            "#2563eb",
-
-                                        fontWeight:
-                                            "600",
-
-                                        cursor:
-                                            "pointer"
+                                        color: "#2563eb",
+                                        fontWeight: "600",
+                                        cursor: "pointer"
                                     }}
                                 >
                                     Close Notifications
@@ -1138,20 +915,15 @@ const AdminDashboard = () => {
                             </div>
 
                         </div>
-
                     )}
-
 
                     {/* ==================================================
                         SYSTEM OVERVIEW
                     ================================================== */}
 
                     <button
-
                         type="button"
-
                         className="dashboard-date"
-
                         onClick={() =>
                             setShowSystemOverview(
                                 true
@@ -1159,9 +931,7 @@ const AdminDashboard = () => {
                         }
                     >
 
-                        <Activity
-                            size={18}
-                        />
+                        <Activity size={18} />
 
                         <span>
                             System Overview
@@ -1173,50 +943,34 @@ const AdminDashboard = () => {
 
             </div>
 
-
             {/* ==================================================
                 ERROR
             ================================================== */}
 
-            {statsError && (
+            {error && (
 
                 <div
                     style={{
-                        marginBottom:
-                            "16px",
-
-                        padding:
-                            "13px 16px",
-
-                        borderRadius:
-                            "10px",
-
-                        background:
-                            "#fef2f2",
-
+                        marginBottom: "16px",
+                        padding: "13px 16px",
+                        borderRadius: "10px",
+                        background: "#fef2f2",
                         border:
                             "1px solid #fecaca",
-
-                        color:
-                            "#b91c1c",
-
-                        display:
-                            "flex",
-
+                        color: "#b91c1c",
+                        display: "flex",
                         justifyContent:
                             "space-between",
-
-                        alignItems:
-                            "center"
+                        alignItems: "center",
+                        gap: "15px"
                     }}
                 >
 
                     <span>
                         Gagal memuat data:
                         {" "}
-                        {statsError}
+                        {error}
                     </span>
-
 
                     <button
                         type="button"
@@ -1224,21 +978,15 @@ const AdminDashboard = () => {
                             refreshDashboard
                         }
                         style={{
-                            border:
-                                "none",
-
+                            border: "none",
                             background:
                                 "#b91c1c",
-
                             color:
                                 "#ffffff",
-
                             padding:
                                 "7px 12px",
-
                             borderRadius:
                                 "7px",
-
                             cursor:
                                 "pointer"
                         }}
@@ -1247,140 +995,311 @@ const AdminDashboard = () => {
                     </button>
 
                 </div>
-
             )}
 
-
             {/* ==================================================
-                STATISTICS
+                TOP STATISTICS
             ================================================== */}
 
             <div
                 className="dashboard-stat-grid"
             >
 
-                {/* TOTAL EQUIPMENT */}
-
                 <StatCard
-
                     title="Total Equipment"
-
                     value={
-                        statsLoading
+                        loading
                             ? "..."
-                            : dashboardStats.totalEquipment
+                            : dashboardData.stats
+                                  .totalEquipment
                     }
-
                     subtitle="Registered equipment"
-
                     icon={
-                        <Package
-                            size={24}
-                        />
+                        <Package size={24} />
                     }
-
                     variant="blue"
-
                 />
 
-
-                {/* ACTIVE MAINTENANCE */}
-
                 <StatCard
-
                     title="Active Maintenance"
-
                     value={
-                        statsLoading
+                        loading
                             ? "..."
-                            : dashboardStats.activeMaintenance
+                            : dashboardData.stats
+                                  .activeMaintenance
                     }
-
                     subtitle="Currently in progress"
-
                     icon={
-                        <Wrench
-                            size={24}
-                        />
+                        <Wrench size={24} />
                     }
-
                     variant="orange"
-
                 />
 
-
-                {/* PENDING APPROVAL */}
-
                 <StatCard
-
                     title="Pending Approval"
-
                     value={
-                        statsLoading
+                        loading
                             ? "..."
-                            : dashboardStats.pendingApproval
+                            : dashboardData.stats
+                                  .pendingApproval
                     }
-
-                    subtitle="Need supervisor review"
-
+                    subtitle="Supervisor / Manager"
                     icon={
-                        <Clock
-                            size={24}
-                        />
+                        <Clock size={24} />
                     }
-
                     variant="purple"
-
                 />
 
-
-                {/* COMPLETED */}
-
                 <StatCard
-
                     title="Completed"
-
                     value={
-                        statsLoading
+                        loading
                             ? "..."
-                            : dashboardStats.completed
+                            : dashboardData.stats
+                                  .completed
                     }
-
                     subtitle="Maintenance completed"
-
                     icon={
-                        <CheckCircle
-                            size={24}
-                        />
+                        <CheckCircle size={24} />
                     }
-
                     variant="green"
-
                 />
 
             </div>
 
+            {/* ==================================================
+                MAINTENANCE PERFORMANCE
+            ================================================== */}
+
+            <div
+                className="dashboard-card"
+                style={{
+                    marginTop: "20px"
+                }}
+            >
+
+                <div
+                    className="card-header"
+                >
+
+                    <div>
+
+                        <h3>
+                            Maintenance Performance
+                        </h3>
+
+                        <p>
+                            Key performance indicators
+                            berdasarkan database
+                        </p>
+
+                    </div>
+
+                    <Activity size={20} />
+
+                </div>
+
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                            "repeat(3, minmax(0, 1fr))",
+                        gap: "16px",
+                        marginTop: "20px"
+                    }}
+                >
+
+                    {/* COMPLETION RATE */}
+
+                    <div
+                        style={{
+                            padding: "18px",
+                            border:
+                                "1px solid #e2e8f0",
+                            borderRadius:
+                                "14px"
+                        }}
+                    >
+
+                        <CheckCircle
+                            size={25}
+                            color="#2563eb"
+                        />
+
+                        <p
+                            style={{
+                                margin:
+                                    "12px 0 4px",
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Completion Rate
+                        </p>
+
+                        <strong
+                            style={{
+                                fontSize:
+                                    "28px",
+                                color:
+                                    "#0f172a"
+                            }}
+                        >
+                            {
+                                dashboardData.stats
+                                    .completionRate
+                            }%
+                        </strong>
+
+                    </div>
+
+                    {/* EQUIPMENT UPTIME */}
+
+                    <div
+                        style={{
+                            padding: "18px",
+                            border:
+                                "1px solid #e2e8f0",
+                            borderRadius:
+                                "14px"
+                        }}
+                    >
+
+                        <Activity
+                            size={25}
+                            color="#16a34a"
+                        />
+
+                        <p
+                            style={{
+                                margin:
+                                    "12px 0 4px",
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Equipment Uptime
+                        </p>
+
+                        <strong
+                            style={{
+                                fontSize:
+                                    "28px",
+                                color:
+                                    "#0f172a"
+                            }}
+                        >
+                            {
+                                dashboardData.stats
+                                    .equipmentUptime !==
+                                null
+                                    ? `${dashboardData.stats.equipmentUptime}%`
+                                    : "N/A"
+                            }
+                        </strong>
+
+                        {dashboardData.stats
+                            .equipmentUptime ===
+                            null && (
+                            <p
+                                style={{
+                                    margin:
+                                        "5px 0 0",
+                                    fontSize:
+                                        "12px",
+                                    color:
+                                        "#94a3b8"
+                                }}
+                            >
+                                Data uptime belum
+                                tersedia di database
+                            </p>
+                        )}
+
+                    </div>
+
+                    {/* ON TIME */}
+
+                    <div
+                        style={{
+                            padding: "18px",
+                            border:
+                                "1px solid #e2e8f0",
+                            borderRadius:
+                                "14px"
+                        }}
+                    >
+
+                        <Activity
+                            size={25}
+                            color="#7c3aed"
+                        />
+
+                        <p
+                            style={{
+                                margin:
+                                    "12px 0 4px",
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            On-Time Maintenance
+                        </p>
+
+                        <strong
+                            style={{
+                                fontSize:
+                                    "28px",
+                                color:
+                                    "#0f172a"
+                            }}
+                        >
+                            {
+                                dashboardData.stats
+                                    .onTimeMaintenance !==
+                                null
+                                    ? `${dashboardData.stats.onTimeMaintenance}%`
+                                    : "N/A"
+                            }
+                        </strong>
+
+                        {dashboardData.stats
+                            .onTimeMaintenance ===
+                            null && (
+                            <p
+                                style={{
+                                    margin:
+                                        "5px 0 0",
+                                    fontSize:
+                                        "12px",
+                                    color:
+                                        "#94a3b8"
+                                }}
+                            >
+                                Due date belum
+                                tersedia di database
+                            </p>
+                        )}
+
+                    </div>
+
+                </div>
+
+            </div>
 
             {/* ==================================================
-                MAINTENANCE ANALYTICS
+                ANALYTICS
             ================================================== */}
 
             <div
                 style={{
-                    display:
-                        "grid",
-
+                    display: "grid",
                     gridTemplateColumns:
                         "minmax(0, 1.5fr) minmax(0, 1fr)",
-
-                    gap:
-                        "20px",
-
-                    marginTop:
-                        "20px"
+                    gap: "20px",
+                    marginTop: "20px"
                 }}
             >
-
 
                 {/* ==================================================
                     MAINTENANCE TREND
@@ -1401,87 +1320,26 @@ const AdminDashboard = () => {
                             </h3>
 
                             <p>
-                                Maintenance request per bulan (
-                                {currentYear}
-                                )
+                                Monthly maintenance activity
                             </p>
 
                         </div>
 
-
-                        <Activity
-                            size={20}
-                        />
+                        <Activity size={20} />
 
                     </div>
 
-
-                    {chartError ? (
-
-                        <div
-                            style={{
-                                minHeight:
-                                    "260px",
-
-                                display:
-                                    "flex",
-
-                                alignItems:
-                                    "center",
-
-                                justifyContent:
-                                    "center",
-
-                                color:
-                                    "#dc2626",
-
-                                textAlign:
-                                    "center",
-
-                                padding:
-                                    "20px"
-                            }}
-                        >
-
-                            <div>
-
-                                <AlertTriangle
-                                    size={30}
-                                    style={{
-                                        marginBottom:
-                                            "10px"
-                                    }}
-                                />
-
-                                <p>
-                                    Gagal memuat
-                                    grafik maintenance.
-                                </p>
-
-                                <small>
-                                    {chartError}
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    ) : chartLoading ? (
+                    {loading ? (
 
                         <div
                             style={{
                                 minHeight:
-                                    "260px",
-
-                                display:
-                                    "flex",
-
+                                    "280px",
+                                display: "flex",
                                 alignItems:
                                     "center",
-
                                 justifyContent:
                                     "center",
-
                                 color:
                                     "#64748b"
                             }}
@@ -1493,42 +1351,31 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                height:
-                                    "280px",
-
-                                display:
-                                    "flex",
-
+                                height: "300px",
+                                display: "flex",
                                 alignItems:
                                     "flex-end",
-
-                                gap:
-                                    "12px",
-
+                                gap: "10px",
                                 padding:
                                     "30px 10px 10px",
-
                                 borderBottom:
                                     "1px solid #e2e8f0"
                             }}
                         >
 
-                            {monthlyChartData.map(
+                            {maintenanceTrend.map(
                                 (item) => {
 
                                     const height =
                                         item.total === 0
-
                                             ? 4
-
                                             : Math.max(
                                                 (
                                                     item.total /
                                                     maxMonthly
-                                                ) * 190,
+                                                ) * 200,
                                                 12
                                             );
-
 
                                     return (
 
@@ -1536,41 +1383,29 @@ const AdminDashboard = () => {
                                             key={
                                                 item.month
                                             }
-
                                             style={{
-                                                flex:
-                                                    1,
-
+                                                flex: 1,
                                                 height:
                                                     "100%",
-
                                                 display:
                                                     "flex",
-
                                                 flexDirection:
                                                     "column",
-
                                                 justifyContent:
                                                     "flex-end",
-
                                                 alignItems:
                                                     "center",
-
                                                 gap:
                                                     "8px"
                                             }}
                                         >
 
-                                            {/* VALUE */}
-
                                             <span
                                                 style={{
                                                     fontSize:
                                                         "12px",
-
                                                     fontWeight:
                                                         "600",
-
                                                     color:
                                                         "#475569"
                                                 }}
@@ -1580,43 +1415,30 @@ const AdminDashboard = () => {
                                                 }
                                             </span>
 
-
-                                            {/* BAR */}
-
                                             <div
                                                 title={`${item.total} maintenance`}
                                                 style={{
                                                     width:
                                                         "100%",
-
                                                     maxWidth:
                                                         "42px",
-
                                                     height:
                                                         `${height}px`,
-
                                                     minHeight:
                                                         "4px",
-
                                                     borderRadius:
                                                         "8px 8px 3px 3px",
-
                                                     background:
                                                         "linear-gradient(180deg, #2563eb, #60a5fa)",
-
                                                     transition:
                                                         "height .3s ease"
                                                 }}
                                             />
 
-
-                                            {/* MONTH */}
-
                                             <span
                                                 style={{
                                                     fontSize:
                                                         "11px",
-
                                                     color:
                                                         "#64748b"
                                                 }}
@@ -1627,21 +1449,17 @@ const AdminDashboard = () => {
                                             </span>
 
                                         </div>
-
                                     );
-
                                 }
                             )}
 
                         </div>
-
                     )}
 
                 </div>
 
-
                 {/* ==================================================
-                    MAINTENANCE STATUS
+                    EQUIPMENT HEALTH
                 ================================================== */}
 
                 <div
@@ -1655,248 +1473,869 @@ const AdminDashboard = () => {
                         <div>
 
                             <h3>
-                                Maintenance Status
+                                Equipment Health
                             </h3>
 
                             <p>
-                                Distribusi status maintenance
+                                Overall equipment condition
                             </p>
 
                         </div>
 
-
-                        <Wrench
-                            size={20}
-                        />
+                        <Package size={20} />
 
                     </div>
 
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection:
+                                "column",
+                            alignItems:
+                                "center",
+                            marginTop:
+                                "20px"
+                        }}
+                    >
 
-                    {chartError ? (
+                        {/* DONUT */}
 
                         <div
                             style={{
-                                minHeight:
-                                    "260px",
-
-                                display:
-                                    "flex",
-
+                                width:
+                                    "220px",
+                                height:
+                                    "220px",
+                                borderRadius:
+                                    "50%",
+                                background:
+                                    `conic-gradient(
+                                        #22c55e 0deg ${goodPercentage * 3.6}deg,
+                                        #f59e0b ${goodPercentage * 3.6}deg ${(goodPercentage + (
+                                            dashboardData.equipmentHealth.warning /
+                                            Math.max(
+                                                goodEquipment +
+                                                warningEquipment +
+                                                criticalEquipment,
+                                                1
+                                            )
+                                        ) * 100) * 3.6}deg,
+                                        #ef4444 ${(goodPercentage + (
+                                            dashboardData.equipmentHealth.warning /
+                                            Math.max(
+                                                goodEquipment +
+                                                warningEquipment +
+                                                criticalEquipment,
+                                                1
+                                            )
+                                        ) * 100) * 3.6}deg 360deg
+                                    )`,
+                                display: "flex",
                                 alignItems:
                                     "center",
-
                                 justifyContent:
-                                    "center",
-
-                                color:
-                                    "#dc2626",
-
-                                textAlign:
                                     "center"
                             }}
                         >
 
-                            <AlertTriangle
-                                size={28}
-                            />
+                            <div
+                                style={{
+                                    width:
+                                        "140px",
+                                    height:
+                                        "140px",
+                                    borderRadius:
+                                        "50%",
+                                    background:
+                                        "#ffffff",
+                                    display:
+                                        "flex",
+                                    flexDirection:
+                                        "column",
+                                    alignItems:
+                                        "center",
+                                    justifyContent:
+                                        "center"
+                                }}
+                            >
+
+                                <strong
+                                    style={{
+                                        fontSize:
+                                            "34px",
+                                        color:
+                                            "#0f172a"
+                                    }}
+                                >
+                                    {
+                                        goodPercentage
+                                    }%
+                                </strong>
+
+                                <span
+                                    style={{
+                                        color:
+                                            "#64748b"
+                                    }}
+                                >
+                                    Good
+                                </span>
+
+                            </div>
 
                         </div>
 
-                    ) : chartLoading ? (
+                        {/* LEGEND */}
 
                         <div
                             style={{
-                                minHeight:
-                                    "260px",
-
-                                display:
-                                    "flex",
-
-                                alignItems:
-                                    "center",
-
-                                justifyContent:
-                                    "center",
-
-                                color:
-                                    "#64748b"
-                            }}
-                        >
-                            Memuat grafik...
-                        </div>
-
-                    ) : (
-
-                        <div
-                            style={{
+                                width:
+                                    "100%",
                                 marginTop:
                                     "20px"
                             }}
                         >
 
-                            {statusChartData.map(
-                                (item) => {
+                            <div
+                                style={{
+                                    display:
+                                        "flex",
+                                    justifyContent:
+                                        "space-between",
+                                    marginBottom:
+                                        "8px"
+                                }}
+                            >
+                                <span>
+                                    🟢 Good
+                                </span>
 
-                                    const percentage =
-                                        item.total ===
-                                        0
+                                <strong>
+                                    {
+                                        goodEquipment
+                                    }
+                                </strong>
+                            </div>
 
-                                            ? 0
+                            <div
+                                style={{
+                                    display:
+                                        "flex",
+                                    justifyContent:
+                                        "space-between",
+                                    marginBottom:
+                                        "8px"
+                                }}
+                            >
+                                <span>
+                                    🟠 Warning
+                                </span>
 
-                                            : (
-                                                item.total /
-                                                maxStatus
-                                            ) * 100;
+                                <strong>
+                                    {
+                                        warningEquipment
+                                    }
+                                </strong>
+                            </div>
 
+                            <div
+                                style={{
+                                    display:
+                                        "flex",
+                                    justifyContent:
+                                        "space-between"
+                                }}
+                            >
+                                <span>
+                                    🔴 Critical
+                                </span>
 
-                                    return (
-
-                                        <div
-                                            key={
-                                                item.key
-                                            }
-
-                                            style={{
-                                                marginBottom:
-                                                    "17px"
-                                            }}
-                                        >
-
-                                            {/* LABEL */}
-
-                                            <div
-                                                style={{
-                                                    display:
-                                                        "flex",
-
-                                                    justifyContent:
-                                                        "space-between",
-
-                                                    marginBottom:
-                                                        "7px"
-                                                }}
-                                            >
-
-                                                <span
-                                                    style={{
-                                                        fontSize:
-                                                            "13px",
-
-                                                        fontWeight:
-                                                            "600",
-
-                                                        color:
-                                                            "#334155"
-                                                    }}
-                                                >
-                                                    {
-                                                        item.label
-                                                    }
-                                                </span>
-
-
-                                                <span
-                                                    style={{
-                                                        fontSize:
-                                                            "13px",
-
-                                                        fontWeight:
-                                                            "700",
-
-                                                        color:
-                                                            "#0f172a"
-                                                    }}
-                                                >
-                                                    {
-                                                        item.total
-                                                    }
-                                                </span>
-
-                                            </div>
-
-
-                                            {/* PROGRESS */}
-
-                                            <div
-                                                style={{
-                                                    width:
-                                                        "100%",
-
-                                                    height:
-                                                        "8px",
-
-                                                    borderRadius:
-                                                        "999px",
-
-                                                    background:
-                                                        "#e2e8f0",
-
-                                                    overflow:
-                                                        "hidden"
-                                                }}
-                                            >
-
-                                                <div
-                                                    style={{
-                                                        width:
-                                                            `${percentage}%`,
-
-                                                        height:
-                                                            "100%",
-
-                                                        borderRadius:
-                                                            "999px",
-
-                                                        background:
-                                                            item.key ===
-                                                            "COMPLETED"
-
-                                                                ? "#16a34a"
-
-                                                                : item.key ===
-                                                                  "REJECTED"
-
-                                                                ? "#dc2626"
-
-                                                                : item.key ===
-                                                                  "IN_PROGRESS"
-
-                                                                ? "#ea580c"
-
-                                                                : item.key ===
-                                                                  "APPROVED"
-
-                                                                ? "#2563eb"
-
-                                                                : item.key ===
-                                                                  "PENDING_MANAGER"
-
-                                                                ? "#9333ea"
-
-                                                                : "#7c3aed",
-
-                                                        transition:
-                                                            "width .3s ease"
-                                                    }}
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                    );
-
-                                }
-                            )}
+                                <strong>
+                                    {
+                                        criticalEquipment
+                                    }
+                                </strong>
+                            </div>
 
                         </div>
 
+                    </div>
+
+                </div>
+
+            </div>
+
+            {/* ==================================================
+                MAINTENANCE STATUS
+            ================================================== */}
+
+            <div
+                className="dashboard-card"
+                style={{
+                    marginTop: "20px"
+                }}
+            >
+
+                <div
+                    className="card-header"
+                >
+
+                    <div>
+
+                        <h3>
+                            Maintenance Status
+                        </h3>
+
+                        <p>
+                            Distribusi status maintenance
+                            dari database
+                        </p>
+
+                    </div>
+
+                    <Wrench size={20} />
+
+                </div>
+
+                <div
+                    style={{
+                        marginTop: "20px"
+                    }}
+                >
+
+                    {statusChartData.map(
+                        (item) => {
+
+                            const percentage =
+                                item.total === 0
+                                    ? 0
+                                    : (
+                                        item.total /
+                                        maxStatus
+                                    ) * 100;
+
+                            let barColor =
+                                "#7c3aed";
+
+                            if (
+                                item.key ===
+                                "COMPLETED"
+                            ) {
+                                barColor =
+                                    "#16a34a";
+                            }
+
+                            if (
+                                item.key ===
+                                "REJECTED"
+                            ) {
+                                barColor =
+                                    "#dc2626";
+                            }
+
+                            if (
+                                item.key ===
+                                "IN_PROGRESS"
+                            ) {
+                                barColor =
+                                    "#ea580c";
+                            }
+
+                            if (
+                                item.key ===
+                                "APPROVED"
+                            ) {
+                                barColor =
+                                    "#2563eb";
+                            }
+
+                            if (
+                                item.key ===
+                                "PENDING_MANAGER"
+                            ) {
+                                barColor =
+                                    "#9333ea";
+                            }
+
+                            return (
+
+                                <div
+                                    key={
+                                        item.key
+                                    }
+                                    style={{
+                                        marginBottom:
+                                            "17px"
+                                    }}
+                                >
+
+                                    <div
+                                        style={{
+                                            display:
+                                                "flex",
+                                            justifyContent:
+                                                "space-between",
+                                            marginBottom:
+                                                "7px"
+                                        }}
+                                    >
+
+                                        <span
+                                            style={{
+                                                fontSize:
+                                                    "13px",
+                                                fontWeight:
+                                                    "600",
+                                                color:
+                                                    "#334155"
+                                            }}
+                                        >
+                                            {
+                                                item.label
+                                            }
+                                        </span>
+
+                                        <span
+                                            style={{
+                                                fontSize:
+                                                    "13px",
+                                                fontWeight:
+                                                    "700",
+                                                color:
+                                                    "#0f172a"
+                                            }}
+                                        >
+                                            {
+                                                item.total
+                                            }
+                                        </span>
+
+                                    </div>
+
+                                    <div
+                                        style={{
+                                            width:
+                                                "100%",
+                                            height:
+                                                "8px",
+                                            borderRadius:
+                                                "999px",
+                                            background:
+                                                "#e2e8f0",
+                                            overflow:
+                                                "hidden"
+                                        }}
+                                    >
+
+                                        <div
+                                            style={{
+                                                width:
+                                                    `${percentage}%`,
+                                                height:
+                                                    "100%",
+                                                borderRadius:
+                                                    "999px",
+                                                background:
+                                                    barColor,
+                                                transition:
+                                                    "width .3s ease"
+                                            }}
+                                        />
+
+                                    </div>
+
+                                </div>
+                            );
+                        }
                     )}
 
                 </div>
 
             </div>
 
+            {/* ==================================================
+                APPROVAL HISTORY
+            ================================================== */}
+
+            <div
+                className="dashboard-card"
+                style={{
+                    marginTop: "20px"
+                }}
+            >
+
+                <div
+                    className="card-header"
+                >
+
+                    <div>
+
+                        <h3>
+                            Approval History
+                        </h3>
+
+                        <p>
+                            Riwayat approval Supervisor
+                            dan Manager
+                        </p>
+
+                    </div>
+
+                    <UserCheck size={20} />
+
+                </div>
+
+                <div
+                    style={{
+                        marginTop:
+                            "20px",
+                        overflowX:
+                            "auto"
+                    }}
+                >
+
+                    {dashboardData
+                        .approvalHistory
+                        .length === 0 ? (
+
+                        <div
+                            style={{
+                                padding:
+                                    "25px",
+                                textAlign:
+                                    "center",
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Belum ada approval
+                            history.
+                        </div>
+
+                    ) : (
+
+                        <table
+                            style={{
+                                width:
+                                    "100%",
+                                borderCollapse:
+                                    "collapse"
+                            }}
+                        >
+
+                            <thead>
+
+                                <tr
+                                    style={{
+                                        borderBottom:
+                                            "1px solid #e2e8f0",
+                                        textAlign:
+                                            "left"
+                                    }}
+                                >
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Maintenance
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        User
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Role
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Action
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Date
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {dashboardData
+                                    .approvalHistory
+                                    .map(
+                                        (item) => (
+
+                                            <tr
+                                                key={
+                                                    item.id
+                                                }
+                                                style={{
+                                                    borderBottom:
+                                                        "1px solid #f1f5f9"
+                                                }}
+                                            >
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    #
+                                                    {
+                                                        item.maintenance_id
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.username ||
+                                                        `User #${item.user_id}`
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.role
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px",
+                                                        fontWeight:
+                                                            "600"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.action
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px",
+                                                        color:
+                                                            "#64748b"
+                                                    }}
+                                                >
+                                                    {
+                                                        formatTime(
+                                                            item.created_at
+                                                        )
+                                                    }
+                                                </td>
+
+                                            </tr>
+
+                                        )
+                                    )}
+
+                            </tbody>
+
+                        </table>
+                    )}
+
+                </div>
+
+            </div>
+
+            {/* ==================================================
+                RECENT MAINTENANCE
+            ================================================== */}
+
+            <div
+                className="dashboard-card"
+                style={{
+                    marginTop: "20px"
+                }}
+            >
+
+                <div
+                    className="card-header"
+                >
+
+                    <div>
+
+                        <h3>
+                            Recent Maintenance
+                        </h3>
+
+                        <p>
+                            Maintenance request terbaru
+                            dari database
+                        </p>
+
+                    </div>
+
+                    <Wrench size={20} />
+
+                </div>
+
+                <div
+                    style={{
+                        marginTop:
+                            "20px",
+                        overflowX:
+                            "auto"
+                    }}
+                >
+
+                    {dashboardData
+                        .recentMaintenance
+                        .length === 0 ? (
+
+                        <div
+                            style={{
+                                padding:
+                                    "25px",
+                                textAlign:
+                                    "center",
+                                color:
+                                    "#64748b"
+                            }}
+                        >
+                            Belum ada maintenance
+                            request.
+                        </div>
+
+                    ) : (
+
+                        <table
+                            style={{
+                                width:
+                                    "100%",
+                                borderCollapse:
+                                    "collapse"
+                            }}
+                        >
+
+                            <thead>
+
+                                <tr
+                                    style={{
+                                        borderBottom:
+                                            "1px solid #e2e8f0",
+                                        textAlign:
+                                            "left"
+                                    }}
+                                >
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Equipment
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Location
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Priority
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Status
+                                    </th>
+
+                                    <th
+                                        style={{
+                                            padding:
+                                                "12px"
+                                        }}
+                                    >
+                                        Created
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {dashboardData
+                                    .recentMaintenance
+                                    .map(
+                                        (item) => (
+
+                                            <tr
+                                                key={
+                                                    item.id
+                                                }
+                                                style={{
+                                                    borderBottom:
+                                                        "1px solid #f1f5f9"
+                                                }}
+                                            >
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+
+                                                    <strong>
+                                                        {
+                                                            item.equipment_name ||
+                                                            "-"
+                                                        }
+                                                    </strong>
+
+                                                    <div
+                                                        style={{
+                                                            fontSize:
+                                                                "12px",
+                                                            color:
+                                                                "#94a3b8"
+                                                        }}
+                                                    >
+                                                        {
+                                                            item.equipment_code ||
+                                                            "-"
+                                                        }
+                                                    </div>
+
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.location ||
+                                                        "-"
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    {
+                                                        item.priority ||
+                                                        "-"
+                                                    }
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px"
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            display:
+                                                                "inline-block",
+                                                            padding:
+                                                                "5px 9px",
+                                                            borderRadius:
+                                                                "999px",
+                                                            background:
+                                                                "#eff6ff",
+                                                            color:
+                                                                "#2563eb",
+                                                            fontSize:
+                                                                "12px",
+                                                            fontWeight:
+                                                                "600"
+                                                        }}
+                                                    >
+                                                        {
+                                                            item.status
+                                                        }
+                                                    </span>
+                                                </td>
+
+                                                <td
+                                                    style={{
+                                                        padding:
+                                                            "12px",
+                                                        color:
+                                                            "#64748b"
+                                                    }}
+                                                >
+                                                    {
+                                                        formatTime(
+                                                            item.created_at
+                                                        )
+                                                    }
+                                                </td>
+
+                                            </tr>
+
+                                        )
+                                    )}
+
+                            </tbody>
+
+                        </table>
+                    )}
+
+                </div>
+
+            </div>
 
             {/* ==================================================
                 SYSTEM INFORMATION
@@ -1921,58 +2360,47 @@ const AdminDashboard = () => {
                         </h3>
 
                         <p>
-                            Current system statistics
+                            Current system status
                         </p>
 
                     </div>
 
-                    <Settings
-                        size={20}
-                    />
+                    <Settings size={20} />
 
                 </div>
-
 
                 <div
                     style={{
                         display:
                             "grid",
-
                         gridTemplateColumns:
                             "repeat(2, 1fr)",
-
                         gap:
                             "15px",
-
                         marginTop:
                             "15px"
                     }}
                 >
 
-                    {/* ACTIVE SYSTEM */}
+                    {/* SYSTEM */}
 
                     <div
                         style={{
                             padding:
                                 "15px",
-
                             borderRadius:
                                 "12px",
-
                             background:
                                 "#f8fafc"
                         }}
                     >
 
-                        <Users
-                            size={21}
-                        />
+                        <Users size={21} />
 
                         <strong
                             style={{
                                 display:
                                     "block",
-
                                 marginTop:
                                     "8px"
                             }}
@@ -1984,7 +2412,6 @@ const AdminDashboard = () => {
                             style={{
                                 color:
                                     "#16a34a",
-
                                 fontSize:
                                     "13px"
                             }}
@@ -1994,31 +2421,25 @@ const AdminDashboard = () => {
 
                     </div>
 
-
                     {/* DATABASE */}
 
                     <div
                         style={{
                             padding:
                                 "15px",
-
                             borderRadius:
                                 "12px",
-
                             background:
                                 "#f8fafc"
                         }}
                     >
 
-                        <Activity
-                            size={21}
-                        />
+                        <Activity size={21} />
 
                         <strong
                             style={{
                                 display:
                                     "block",
-
                                 marginTop:
                                     "8px"
                             }}
@@ -2029,28 +2450,80 @@ const AdminDashboard = () => {
                         <span
                             style={{
                                 color:
-                                    statsError
+                                    error
                                         ? "#dc2626"
                                         : "#16a34a",
-
                                 fontSize:
                                     "13px"
                             }}
                         >
                             ●{" "}
-                            {
-                                statsError
-                                    ? "Connection Error"
-                                    : "Connected"
-                            }
+                            {error
+                                ? "Connection Error"
+                                : "Connected"}
                         </span>
 
                     </div>
 
                 </div>
 
-            </div>
+                {/* REFRESH */}
 
+                <button
+                    type="button"
+                    onClick={
+                        refreshDashboard
+                    }
+                    disabled={loading}
+                    style={{
+                        width:
+                            "100%",
+                        marginTop:
+                            "20px",
+                        padding:
+                            "12px",
+                        border:
+                            "1px solid #2563eb",
+                        borderRadius:
+                            "10px",
+                        background:
+                            "#ffffff",
+                        color:
+                            "#2563eb",
+                        fontWeight:
+                            "600",
+                        cursor:
+                            loading
+                                ? "not-allowed"
+                                : "pointer",
+                        display:
+                            "flex",
+                        alignItems:
+                            "center",
+                        justifyContent:
+                            "center",
+                        gap:
+                            "8px"
+                    }}
+                >
+
+                    <RefreshCw
+                        size={17}
+                        style={{
+                            animation:
+                                loading
+                                    ? "spin 1s linear infinite"
+                                    : "none"
+                        }}
+                    />
+
+                    {loading
+                        ? "Memuat Data..."
+                        : "Refresh Data"}
+
+                </button>
+
+            </div>
 
             {/* ==================================================
                 NOTIFICATION DETAIL MODAL
@@ -2062,29 +2535,20 @@ const AdminDashboard = () => {
                     style={{
                         position:
                             "fixed",
-
-                        inset:
-                            0,
-
+                        inset: 0,
                         background:
                             "rgba(15,23,42,.45)",
-
                         display:
                             "flex",
-
                         alignItems:
                             "center",
-
                         justifyContent:
                             "center",
-
                         padding:
                             "20px",
-
                         zIndex:
                             10000
                     }}
-
                     onClick={
                         closeNotification
                     }
@@ -2094,43 +2558,30 @@ const AdminDashboard = () => {
                         style={{
                             width:
                                 "100%",
-
                             maxWidth:
                                 "500px",
-
                             background:
                                 "#ffffff",
-
                             borderRadius:
                                 "18px",
-
                             padding:
                                 "28px",
-
                             boxShadow:
                                 "0 25px 70px rgba(0,0,0,.2)"
                         }}
-
-                        onClick={(
-                            event
-                        ) =>
+                        onClick={(event) =>
                             event.stopPropagation()
                         }
                     >
-
-                        {/* HEADER */}
 
                         <div
                             style={{
                                 display:
                                     "flex",
-
                                 alignItems:
                                     "center",
-
                                 justifyContent:
                                     "space-between",
-
                                 marginBottom:
                                     "20px"
                             }}
@@ -2140,7 +2591,6 @@ const AdminDashboard = () => {
                                 style={{
                                     margin:
                                         0,
-
                                     color:
                                         "#0f172a"
                                 }}
@@ -2148,149 +2598,101 @@ const AdminDashboard = () => {
                                 Notification Detail
                             </h2>
 
-
                             <button
-
                                 type="button"
-
                                 onClick={
                                     closeNotification
                                 }
-
                                 style={{
                                     width:
                                         "38px",
-
                                     height:
                                         "38px",
-
                                     border:
                                         "none",
-
                                     borderRadius:
                                         "10px",
-
                                     background:
                                         "#f1f5f9",
-
                                     display:
                                         "flex",
-
                                     alignItems:
                                         "center",
-
                                     justifyContent:
                                         "center",
-
                                     cursor:
                                         "pointer"
                                 }}
                             >
-
-                                <X
-                                    size={20}
-                                />
-
+                                <X size={20} />
                             </button>
 
                         </div>
-
-
-                        {/* ICON */}
 
                         <div
                             style={{
                                 width:
                                     "64px",
-
                                 height:
                                     "64px",
-
                                 borderRadius:
                                     "16px",
-
                                 display:
                                     "flex",
-
                                 alignItems:
                                     "center",
-
                                 justifyContent:
                                     "center",
-
                                 marginBottom:
                                     "18px",
-
                                 background:
                                     selectedNotification.type ===
                                     "maintenance"
-
                                         ? "#eff6ff"
-
                                         : selectedNotification.type ===
                                           "approval"
-
                                         ? "#f0fdf4"
-
                                         : "#fff7ed",
-
                                 color:
                                     selectedNotification.type ===
                                     "maintenance"
-
                                         ? "#2563eb"
-
                                         : selectedNotification.type ===
                                           "approval"
-
                                         ? "#16a34a"
-
                                         : "#ea580c"
                             }}
                         >
 
                             {selectedNotification.type ===
                                 "maintenance" && (
-
                                 <Wrench
                                     size={30}
                                 />
-
                             )}
-
 
                             {selectedNotification.type ===
                                 "approval" && (
-
                                 <CheckCircle
                                     size={30}
                                 />
-
                             )}
-
 
                             {selectedNotification.type ===
                                 "warning" && (
-
                                 <AlertTriangle
                                     size={30}
                                 />
-
                             )}
 
                         </div>
-
-
-                        {/* TITLE */}
 
                         <h3
                             style={{
                                 margin:
                                     "0 0 8px",
-
                                 color:
                                     "#0f172a",
-
                                 fontSize:
                                     "21px"
                             }}
@@ -2300,17 +2702,12 @@ const AdminDashboard = () => {
                             }
                         </h3>
 
-
-                        {/* DESCRIPTION */}
-
                         <p
                             style={{
                                 margin:
                                     "0 0 10px",
-
                                 color:
                                     "#475569",
-
                                 fontSize:
                                     "15px"
                             }}
@@ -2320,145 +2717,64 @@ const AdminDashboard = () => {
                             }
                         </p>
 
-
-                        {/* TIME */}
-
                         <span
                             style={{
                                 color:
                                     "#94a3b8",
-
                                 fontSize:
                                     "13px"
                             }}
                         >
                             {
-                                selectedNotification.time
+                                formatTime(
+                                    selectedNotification.time
+                                )
                             }
                         </span>
-
-
-                        {/* DETAIL */}
 
                         <div
                             style={{
                                 marginTop:
                                     "22px",
-
                                 padding:
                                     "17px",
-
                                 borderRadius:
                                     "12px",
-
                                 background:
                                     "#f8fafc",
-
                                 border:
                                     "1px solid #e2e8f0"
                             }}
                         >
 
-                            {selectedNotification.type ===
-                                "maintenance" && (
-
-                                <>
-
-                                    <strong>
-                                        Maintenance Request
-                                    </strong>
-
-                                    <p>
-                                        Terdapat
-                                        maintenance
-                                        request baru
-                                        yang perlu
-                                        diperiksa.
-                                    </p>
-
-                                </>
-
-                            )}
-
-
-                            {selectedNotification.type ===
-                                "approval" && (
-
-                                <>
-
-                                    <strong>
-                                        Maintenance Approved
-                                    </strong>
-
-                                    <p>
-                                        Maintenance
-                                        request telah
-                                        disetujui.
-                                    </p>
-
-                                </>
-
-                            )}
-
-
-                            {selectedNotification.type ===
-                                "warning" && (
-
-                                <>
-
-                                    <strong>
-                                        Equipment Warning
-                                    </strong>
-
-                                    <p>
-                                        Equipment
-                                        membutuhkan
-                                        perhatian
-                                        lebih lanjut.
-                                    </p>
-
-                                </>
-
-                            )}
+                            {
+                                selectedNotification.detail
+                            }
 
                         </div>
 
-
-                        {/* CLOSE */}
-
                         <button
-
                             type="button"
-
                             onClick={
                                 closeNotification
                             }
-
                             style={{
                                 width:
                                     "100%",
-
                                 marginTop:
                                     "20px",
-
                                 padding:
                                     "13px",
-
                                 border:
                                     "none",
-
                                 borderRadius:
                                     "10px",
-
                                 background:
                                     "#2563eb",
-
                                 color:
                                     "#ffffff",
-
                                 fontWeight:
                                     "600",
-
                                 cursor:
                                     "pointer"
                             }}
@@ -2469,9 +2785,7 @@ const AdminDashboard = () => {
                     </div>
 
                 </div>
-
             )}
-
 
             {/* ==================================================
                 SYSTEM OVERVIEW MODAL
@@ -2483,29 +2797,20 @@ const AdminDashboard = () => {
                     style={{
                         position:
                             "fixed",
-
-                        inset:
-                            0,
-
+                        inset: 0,
                         background:
                             "rgba(15,23,42,.45)",
-
                         display:
                             "flex",
-
                         alignItems:
                             "center",
-
                         justifyContent:
                             "center",
-
                         padding:
                             "20px",
-
                         zIndex:
                             9999
                     }}
-
                     onClick={() =>
                         setShowSystemOverview(
                             false
@@ -2517,43 +2822,30 @@ const AdminDashboard = () => {
                         style={{
                             width:
                                 "100%",
-
                             maxWidth:
                                 "600px",
-
                             background:
                                 "#ffffff",
-
                             borderRadius:
                                 "18px",
-
                             padding:
                                 "28px",
-
                             boxShadow:
                                 "0 25px 70px rgba(0,0,0,.2)"
                         }}
-
-                        onClick={(
-                            event
-                        ) =>
+                        onClick={(event) =>
                             event.stopPropagation()
                         }
                     >
-
-                        {/* HEADER */}
 
                         <div
                             style={{
                                 display:
                                     "flex",
-
                                 justifyContent:
                                     "space-between",
-
                                 alignItems:
                                     "center",
-
                                 marginBottom:
                                     "22px"
                             }}
@@ -2565,7 +2857,6 @@ const AdminDashboard = () => {
                                     style={{
                                         margin:
                                             0,
-
                                         color:
                                             "#0f172a"
                                     }}
@@ -2577,7 +2868,6 @@ const AdminDashboard = () => {
                                     style={{
                                         margin:
                                             "5px 0 0",
-
                                         color:
                                             "#64748b"
                                     }}
@@ -2587,72 +2877,51 @@ const AdminDashboard = () => {
 
                             </div>
 
-
                             <button
-
                                 type="button"
-
                                 onClick={() =>
                                     setShowSystemOverview(
                                         false
                                     )
                                 }
-
                                 style={{
                                     width:
                                         "38px",
-
                                     height:
                                         "38px",
-
                                     border:
                                         "none",
-
                                     borderRadius:
                                         "10px",
-
                                     background:
                                         "#f1f5f9",
-
                                     cursor:
                                         "pointer",
-
                                     display:
                                         "flex",
-
                                     alignItems:
                                         "center",
-
                                     justifyContent:
                                         "center"
                                 }}
                             >
-
-                                <X
-                                    size={20}
-                                />
-
+                                <X size={20} />
                             </button>
 
                         </div>
 
-
-                        {/* STATUS */}
+                        {/* SYSTEM STATUS */}
 
                         <div
                             style={{
                                 padding:
                                     "18px",
-
                                 borderRadius:
                                     "14px",
-
                                 background:
                                     "#f0fdf4",
-
                                 border:
                                     "1px solid #bbf7d0",
-
                                 marginBottom:
                                     "18px"
                             }}
@@ -2662,10 +2931,8 @@ const AdminDashboard = () => {
                                 style={{
                                     display:
                                         "flex",
-
                                     alignItems:
                                         "center",
-
                                     gap:
                                         "12px"
                                 }}
@@ -2682,7 +2949,6 @@ const AdminDashboard = () => {
                                         style={{
                                             display:
                                                 "block",
-
                                             color:
                                                 "#166534"
                                         }}
@@ -2694,7 +2960,6 @@ const AdminDashboard = () => {
                                         style={{
                                             color:
                                                 "#15803d",
-
                                             fontSize:
                                                 "13px"
                                         }}
@@ -2708,32 +2973,25 @@ const AdminDashboard = () => {
 
                         </div>
 
-
                         {/* STAT GRID */}
 
                         <div
                             style={{
                                 display:
                                     "grid",
-
                                 gridTemplateColumns:
                                     "repeat(2, 1fr)",
-
                                 gap:
                                     "14px"
                             }}
                         >
 
-                            {/* EQUIPMENT */}
-
                             <div
                                 style={{
                                     padding:
                                         "18px",
-
                                     border:
                                         "1px solid #e2e8f0",
-
                                     borderRadius:
                                         "13px"
                                 }}
@@ -2751,7 +3009,9 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     {
-                                        dashboardStats.totalEquipment
+                                        dashboardData
+                                            .stats
+                                            .totalEquipment
                                     }
                                 </h3>
 
@@ -2761,17 +3021,12 @@ const AdminDashboard = () => {
 
                             </div>
 
-
-                            {/* ACTIVE */}
-
                             <div
                                 style={{
                                     padding:
                                         "18px",
-
                                     border:
                                         "1px solid #e2e8f0",
-
                                     borderRadius:
                                         "13px"
                                 }}
@@ -2789,7 +3044,9 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     {
-                                        dashboardStats.activeMaintenance
+                                        dashboardData
+                                            .stats
+                                            .activeMaintenance
                                     }
                                 </h3>
 
@@ -2799,17 +3056,12 @@ const AdminDashboard = () => {
 
                             </div>
 
-
-                            {/* PENDING */}
-
                             <div
                                 style={{
                                     padding:
                                         "18px",
-
                                     border:
                                         "1px solid #e2e8f0",
-
                                     borderRadius:
                                         "13px"
                                 }}
@@ -2827,7 +3079,9 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     {
-                                        dashboardStats.pendingApproval
+                                        dashboardData
+                                            .stats
+                                            .pendingApproval
                                     }
                                 </h3>
 
@@ -2837,17 +3091,12 @@ const AdminDashboard = () => {
 
                             </div>
 
-
-                            {/* COMPLETED */}
-
                             <div
                                 style={{
                                     padding:
                                         "18px",
-
                                     border:
                                         "1px solid #e2e8f0",
-
                                     borderRadius:
                                         "13px"
                                 }}
@@ -2865,7 +3114,9 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     {
-                                        dashboardStats.completed
+                                        dashboardData
+                                            .stats
+                                            .completed
                                     }
                                 </h3>
 
@@ -2877,42 +3128,28 @@ const AdminDashboard = () => {
 
                         </div>
 
-
-                        {/* REFRESH */}
-
                         <button
-
                             type="button"
-
                             onClick={
                                 refreshDashboard
                             }
-
                             style={{
                                 width:
                                     "100%",
-
                                 marginTop:
                                     "20px",
-
                                 padding:
                                     "12px",
-
                                 border:
                                     "1px solid #2563eb",
-
                                 borderRadius:
                                     "10px",
-
                                 background:
                                     "#ffffff",
-
                                 color:
                                     "#2563eb",
-
                                 fontWeight:
                                     "600",
-
                                 cursor:
                                     "pointer"
                             }}
@@ -2923,14 +3160,10 @@ const AdminDashboard = () => {
                     </div>
 
                 </div>
-
             )}
 
         </div>
-
     );
-
 };
-
 
 export default AdminDashboard;
