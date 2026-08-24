@@ -4,7 +4,9 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    Wrench
+    Wrench,
+    Search,
+    X
 } from "lucide-react";
 
 const API = "http://localhost:3000";
@@ -13,47 +15,57 @@ function History() {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [search, setSearch] = useState("");
 
     const loadHistory = async () => {
         try {
             setLoading(true);
             setError("");
 
-           const response = await fetch(
-    `${API}/api/maintenance/history`
-);
+            const response = await fetch(
+                `${API}/api/maintenance/history`
+            );
 
-const contentType =
-    response.headers.get("content-type") || "";
+            const contentType =
+                response.headers.get("content-type") || "";
 
-if (!contentType.includes("application/json")) {
+            if (!contentType.includes("application/json")) {
+                const text = await response.text();
 
-    const text = await response.text();
+                console.error(
+                    "Response bukan JSON:",
+                    text
+                );
 
-    console.error(
-        "Response bukan JSON:",
-        text
-    );
+                throw new Error(
+                    `Server mengembalikan response bukan JSON (${response.status})`
+                );
+            }
 
-    throw new Error(
-        `Server mengembalikan response bukan JSON (${response.status})`
-    );
-}
+            const data = await response.json();
 
-const data = await response.json();
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Gagal mengambil history"
+                );
+            }
 
-if (!response.ok) {
+            setHistory(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
 
-    throw new Error(
-        data.message ||
-        "Gagal mengambil history"
-    );
-}
-            setHistory(Array.isArray(data) ? data : []);
         } catch (err) {
-            console.error("Load history error:", err);
+            console.error(
+                "Load history error:",
+                err
+            );
+
             setError(err.message);
             setHistory([]);
+
         } finally {
             setLoading(false);
         }
@@ -74,6 +86,9 @@ if (!response.ok) {
             case "IN_PROGRESS":
                 return <Wrench size={18} />;
 
+            case "COMPLETED":
+                return <CheckCircle size={18} />;
+
             default:
                 return <Clock size={18} />;
         }
@@ -90,6 +105,9 @@ if (!response.ok) {
             case "IN_PROGRESS":
                 return "progress";
 
+            case "COMPLETED":
+                return "approved";
+
             default:
                 return "pending";
         }
@@ -98,21 +116,61 @@ if (!response.ok) {
     const formatDate = (date) => {
         if (!date) return "-";
 
-        return new Date(date).toLocaleString("id-ID", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        });
+        return new Date(date).toLocaleString(
+            "id-ID",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
     };
+
+    // =====================================================
+    // SEARCH FILTER
+    // =====================================================
+
+    const filteredHistory = history.filter((item) => {
+        const keyword = search
+            .toLowerCase()
+            .trim();
+
+        if (!keyword) {
+            return true;
+        }
+
+        const searchableData = [
+            item.maintenance_id,
+            item.equipment_id,
+            item.equipment_name,
+            item.engineer_id,
+            item.engineer_name,
+            item.description,
+            item.priority,
+            item.status,
+            formatDate(item.created_at)
+        ];
+
+        return searchableData.some((value) =>
+            String(value || "")
+                .toLowerCase()
+                .includes(keyword)
+        );
+    });
 
     return (
         <div className="history-page">
 
-            {/* HEADER */}
+            {/* =====================================================
+                HEADER
+            ===================================================== */}
+
             <div className="history-page-header">
+
                 <div>
+
                     <span className="page-label">
                         History
                     </span>
@@ -124,15 +182,22 @@ if (!response.ok) {
                     <p>
                         Riwayat seluruh aktivitas maintenance equipment.
                     </p>
+
                 </div>
+
             </div>
 
 
-            {/* CONTENT */}
+            {/* =====================================================
+                CONTENT
+            ===================================================== */}
+
             <div className="history-card">
 
                 <div className="history-card-header">
+
                     <div>
+
                         <h3>
                             Maintenance History
                         </h3>
@@ -140,33 +205,101 @@ if (!response.ok) {
                         <p>
                             Riwayat request maintenance yang telah diproses.
                         </p>
+
                     </div>
 
                     <div className="history-header-icon">
+
                         <HistoryIcon size={22} />
+
                     </div>
+
                 </div>
 
 
-                {/* ERROR */}
-                {error && (
-                    <div className="history-error">
-                        {error}
+                {/* =====================================================
+                    SEARCH
+                ===================================================== */}
+
+                {!loading && !error && history.length > 0 && (
+
+                    <div className="history-search-wrapper">
+
+                        <div className="history-search">
+
+                            <Search
+                                size={19}
+                                className="history-search-icon"
+                            />
+
+                            <input
+                                type="text"
+                                placeholder="Cari ID, equipment, engineer, status, priority..."
+                                value={search}
+                                onChange={(e) =>
+                                    setSearch(e.target.value)
+                                }
+                            />
+
+                            {search && (
+
+                                <button
+                                    type="button"
+                                    className="history-search-clear"
+                                    onClick={() =>
+                                        setSearch("")
+                                    }
+                                    title="Clear search"
+                                >
+
+                                    <X size={17} />
+
+                                </button>
+
+                            )}
+
+                        </div>
+
                     </div>
+
                 )}
 
 
-                {/* LOADING */}
+                {/* =====================================================
+                    ERROR
+                ===================================================== */}
+
+                {error && (
+
+                    <div className="history-error">
+
+                        {error}
+
+                    </div>
+
+                )}
+
+
+                {/* =====================================================
+                    LOADING
+                ===================================================== */}
+
                 {loading ? (
+
                     <div className="history-empty">
+
                         <Clock size={24} />
 
                         <h3>
                             Memuat history...
                         </h3>
+
                     </div>
+
                 ) : history.length === 0 ? (
+
                     <div className="history-empty">
+
                         <HistoryIcon size={28} />
 
                         <h3>
@@ -177,109 +310,206 @@ if (!response.ok) {
                             Request maintenance yang sudah diproses
                             akan muncul di sini.
                         </p>
+
                     </div>
+
+                ) : filteredHistory.length === 0 ? (
+
+                    /* =====================================================
+                       SEARCH TIDAK DITEMUKAN
+                    ===================================================== */
+
+                    <div className="history-empty">
+
+                        <Search size={28} />
+
+                        <h3>
+                            Data tidak ditemukan
+                        </h3>
+
+                        <p>
+                            Tidak ada history yang sesuai dengan pencarian
+                            "{search}".
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => setSearch("")}
+                            className="history-reset-search"
+                        >
+                            Reset Pencarian
+                        </button>
+
+                    </div>
+
                 ) : (
+
+                    /* =====================================================
+                        TABLE
+                    ===================================================== */
+
                     <div className="history-table-wrapper">
 
-    <table className="history-table">
+                        <table className="history-table">
 
-        <thead>
+                            <thead>
 
-            <tr>
-                <th>ID</th>
-                <th>EQUIPMENT</th>
-                <th>ENGINEER</th>
-                <th>DESCRIPTION</th>
-                <th>PRIORITY</th>
-                <th>STATUS</th>
-                <th>TANGGAL</th>
-            </tr>
+                                <tr>
 
-        </thead>
+                                    <th>ID</th>
 
-        <tbody>
+                                    <th>
+                                        EQUIPMENT
+                                    </th>
 
-            {history.map((item) => (
+                                    <th>
+                                        ENGINEER
+                                    </th>
 
-                <tr key={item.maintenance_id}>
+                                    <th>
+                                        DESCRIPTION
+                                    </th>
 
-                    <td>
-                        {item.maintenance_id}
-                    </td>
+                                    <th>
+                                        PRIORITY
+                                    </th>
 
-                    <td>
+                                    <th>
+                                        STATUS
+                                    </th>
 
-                        <div className="history-equipment">
+                                    <th>
+                                        TANGGAL
+                                    </th>
 
-                            <div className="history-equipment-icon">
+                                </tr>
 
-                                <Wrench size={15} />
+                            </thead>
 
-                            </div>
+                            <tbody>
 
-                            <span>
+                                {filteredHistory.map(
+                                    (item) => (
 
-                                {item.equipment_name ||
-                                    `Equipment #${item.equipment_id}`}
+                                        <tr
+                                            key={
+                                                item.maintenance_id
+                                            }
+                                        >
 
-                            </span>
+                                            {/* ID */}
 
-                        </div>
+                                            <td>
 
-                    </td>
+                                                {item.maintenance_id}
 
-                    <td>
-                        {item.engineer_name ||
-                            item.engineer_id ||
-                            "-"}
-                    </td>
+                                            </td>
 
-                    <td>
-                        {item.description || "-"}
-                    </td>
 
-                    <td>
-                        {item.priority || "-"}
-                    </td>
+                                            {/* EQUIPMENT */}
 
-                    <td>
+                                            <td>
 
-                        <span
-                            className={`history-status ${getStatusClass(
-                                item.status
-                            )}`}
-                        >
+                                                <div className="history-equipment">
 
-                            {getStatusIcon(
-                                item.status
-                            )}
+                                                    <div className="history-equipment-icon">
 
-                            {item.status || "-"}
+                                                        <Wrench
+                                                            size={15}
+                                                        />
 
-                        </span>
+                                                    </div>
 
-                    </td>
+                                                    <span>
 
-                    <td>
+                                                        {item.equipment_name ||
+                                                            `Equipment #${item.equipment_id}`}
 
-                        {formatDate(
-                            item.created_at
-                        )}
+                                                    </span>
 
-                    </td>
+                                                </div>
 
-                </tr>
+                                            </td>
 
-            ))}
 
-        </tbody>
+                                            {/* ENGINEER */}
 
-    </table>
+                                            <td>
 
-</div>
+                                                {item.engineer_name ||
+                                                    item.engineer_id ||
+                                                    "-"}
+
+                                            </td>
+
+
+                                            {/* DESCRIPTION */}
+
+                                            <td>
+
+                                                {item.description ||
+                                                    "-"}
+
+                                            </td>
+
+
+                                            {/* PRIORITY */}
+
+                                            <td>
+
+                                                {item.priority ||
+                                                    "-"}
+
+                                            </td>
+
+
+                                            {/* STATUS */}
+
+                                            <td>
+
+                                                <span
+                                                    className={`history-status ${getStatusClass(
+                                                        item.status
+                                                    )}`}
+                                                >
+
+                                                    {getStatusIcon(
+                                                        item.status
+                                                    )}
+
+                                                    {item.status ||
+                                                        "-"}
+
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* DATE */}
+
+                                            <td>
+
+                                                {formatDate(
+                                                    item.created_at
+                                                )}
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
                 )}
 
             </div>
+
         </div>
     );
 }

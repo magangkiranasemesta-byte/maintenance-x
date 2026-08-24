@@ -2050,6 +2050,125 @@
     background: #f8fafc;
 }
 
+/* =====================================================
+   HISTORY SEARCH
+===================================================== */
+
+.history-search-wrapper {
+    padding: 0 24px 20px;
+}
+
+.history-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.history-search input {
+    width: 100%;
+    height: 44px;
+
+    padding: 0 44px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.history-search input::placeholder {
+    color: #94a3b8;
+}
+
+.history-search input:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.history-search-icon {
+    position: absolute;
+    left: 15px;
+
+    color: #64748b;
+
+    pointer-events: none;
+}
+
+.history-search-clear {
+    position: absolute;
+    right: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: transparent;
+
+    color: #64748b;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.history-search-clear:hover {
+    background: #f1f5f9;
+    color: #ef4444;
+}
+
+
+/* =====================================================
+   SEARCH EMPTY
+===================================================== */
+
+.history-reset-search {
+    margin-top: 12px;
+
+    padding: 9px 16px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.history-reset-search:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
 /* =========================
    HEADER
 ========================= */
@@ -2684,6 +2803,113 @@
         padding: 12px;
     }
 
+}
+
+/* =====================================================
+   SORTABLE TABLE HEADER
+===================================================== */
+
+.maintenance-sort-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+
+    width: 100%;
+
+    padding: 0;
+
+    border: none;
+    background: transparent;
+
+    color: inherit;
+
+    font: inherit;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.maintenance-sort-button svg {
+    flex-shrink: 0;
+
+    opacity: 0.45;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.maintenance-sort-button:hover {
+    color: #2563eb;
+}
+
+.maintenance-sort-button:hover svg {
+    opacity: 1;
+}
+
+.maintenance-sort-button.active {
+    color: #2563eb;
+}
+
+.maintenance-sort-button.active svg {
+    opacity: 1;
+}
+
+
+/* =====================================================
+   SORT FOOTER
+===================================================== */
+
+.maintenance-sort-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 18px;
+
+    border-top: 1px solid #e5e7eb;
+
+    font-size: 13px;
+
+    color: #64748b;
+}
+
+.maintenance-sort-footer strong {
+    color: #1e293b;
+}
+
+.maintenance-reset-sort {
+    padding: 7px 12px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: #475569;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        all 0.2s ease;
+}
+
+.maintenance-reset-sort:hover {
+    border-color: #2563eb;
+
+    background: #eff6ff;
+
+    color: #2563eb;
 }
 
 /* ========================================

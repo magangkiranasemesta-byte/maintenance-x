@@ -1,7 +1,4 @@
-import React, {
-    useEffect,
-    useState
-} from "react";
+import React, { useEffect, useState } from "react";
 
 import {
     Package,
@@ -23,7 +20,6 @@ import StatCard from "./StatCard";
 const API = "http://localhost:3000";
 
 const AdminDashboard = () => {
-
     // ======================================================
     // DASHBOARD DATA
     // ======================================================
@@ -68,14 +64,9 @@ const AdminDashboard = () => {
     // MODAL
     // ======================================================
 
-    const [showNotifications, setShowNotifications] =
-        useState(false);
-
-    const [selectedNotification, setSelectedNotification] =
-        useState(null);
-
-    const [showSystemOverview, setShowSystemOverview] =
-        useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [selectedNotification, setSelectedNotification] = useState(null);
+    const [showSystemOverview, setShowSystemOverview] = useState(false);
 
     // ======================================================
     // LOAD DASHBOARD
@@ -92,18 +83,9 @@ const AdminDashboard = () => {
 
             const result = await response.json();
 
-            console.log(
-                "================================="
-            );
-
-            console.log(
-                "DASHBOARD DATABASE RESPONSE:",
-                result
-            );
-
-            console.log(
-                "================================="
-            );
+            console.log("=================================");
+            console.log("DASHBOARD DATABASE RESPONSE:", result);
+            console.log("=================================");
 
             if (!response.ok) {
                 throw new Error(
@@ -121,99 +103,96 @@ const AdminDashboard = () => {
 
             setDashboardData({
                 stats: {
-                    totalEquipment:
-                        Number(
-                            result.stats?.totalEquipment || 0
-                        ),
+                    totalEquipment: Number(
+                        result.stats?.totalEquipment || 0
+                    ),
 
-                    activeMaintenance:
-                        Number(
-                            result.stats?.activeMaintenance || 0
-                        ),
+                    activeMaintenance: Number(
+                        result.stats?.activeMaintenance || 0
+                    ),
 
-                    pendingApproval:
-                        Number(
-                            result.stats?.pendingApproval || 0
-                        ),
+                    pendingApproval: Number(
+                        result.stats?.pendingApproval || 0
+                    ),
 
-                    completed:
-                        Number(
-                            result.stats?.completed || 0
-                        ),
+                    completed: Number(
+                        result.stats?.completed || 0
+                    ),
 
-                    rejected:
-                        Number(
-                            result.stats?.rejected || 0
-                        ),
+                    rejected: Number(
+                        result.stats?.rejected || 0
+                    ),
 
-                    totalMaintenance:
-                        Number(
-                            result.stats?.totalMaintenance || 0
-                        ),
+                    totalMaintenance: Number(
+                        result.stats?.totalMaintenance || 0
+                    ),
 
-                    completionRate:
-                        Number(
-                            result.stats?.completionRate || 0
-                        ),
+                    completionRate: Number(
+                        result.stats?.completionRate || 0
+                    ),
 
                     equipmentUptime:
-                        result.stats?.equipmentUptime ??
-                        null,
+                        result.stats?.equipmentUptime !== undefined &&
+                        result.stats?.equipmentUptime !== null
+                            ? Number(result.stats.equipmentUptime)
+                            : null,
 
                     onTimeMaintenance:
-                        result.stats?.onTimeMaintenance ??
-                        null
+                        result.stats?.onTimeMaintenance !== undefined &&
+                        result.stats?.onTimeMaintenance !== null
+                            ? Number(result.stats.onTimeMaintenance)
+                            : null
                 },
 
-                maintenanceTrend:
-                    Array.isArray(
-                        result.maintenanceTrend
-                    )
-                        ? result.maintenanceTrend
-                        : [],
+                maintenanceTrend: Array.isArray(
+                    result.maintenanceTrend
+                )
+                    ? result.maintenanceTrend
+                    : [],
 
-                maintenanceStatus:
-                    Array.isArray(
-                        result.maintenanceStatus
-                    )
-                        ? result.maintenanceStatus
-                        : [],
+                maintenanceStatus: Array.isArray(
+                    result.maintenanceStatus
+                )
+                    ? result.maintenanceStatus
+                    : [],
 
-                equipmentHealth:
-                    result.equipmentHealth || {
-                        good: 0,
-                        warning: 0,
-                        critical: 0,
-                        goodPercentage: 0
-                    },
+                equipmentHealth: {
+                    good: Number(
+                        result.equipmentHealth?.good || 0
+                    ),
 
-                approvalHistory:
-                    Array.isArray(
-                        result.approvalHistory
-                    )
-                        ? result.approvalHistory
-                        : [],
+                    warning: Number(
+                        result.equipmentHealth?.warning || 0
+                    ),
 
-                recentMaintenance:
-                    Array.isArray(
-                        result.recentMaintenance
+                    critical: Number(
+                        result.equipmentHealth?.critical || 0
+                    ),
+
+                    goodPercentage: Number(
+                        result.equipmentHealth?.goodPercentage || 0
                     )
-                        ? result.recentMaintenance
-                        : []
+                },
+
+                approvalHistory: Array.isArray(
+                    result.approvalHistory
+                )
+                    ? result.approvalHistory
+                    : [],
+
+                recentMaintenance: Array.isArray(
+                    result.recentMaintenance
+                )
+                    ? result.recentMaintenance
+                    : []
             });
-
         } catch (err) {
-
-            console.error(
-                "DASHBOARD ERROR:",
-                err
-            );
+            console.error("DASHBOARD ERROR:", err);
 
             setError(
                 err.message ||
                 "Gagal mengambil data dashboard"
             );
-
         } finally {
             setLoading(false);
         }
@@ -232,19 +211,14 @@ const AdminDashboard = () => {
     // ======================================================
 
     const getStatusCount = (status) => {
-
         const item =
             dashboardData.maintenanceStatus.find(
                 (row) =>
-                    String(
-                        row.status || ""
-                    ).toUpperCase() ===
+                    String(row?.status || "").toUpperCase() ===
                     status
             );
 
-        return Number(
-            item?.total || 0
-        );
+        return Number(item?.total || 0);
     };
 
     // ======================================================
@@ -278,11 +252,10 @@ const AdminDashboard = () => {
         }
     ];
 
-    const statusChartData =
-        statusList.map((item) => ({
-            ...item,
-            total: getStatusCount(item.key)
-        }));
+    const statusChartData = statusList.map((item) => ({
+        ...item,
+        total: getStatusCount(item.key)
+    }));
 
     const maxStatus = Math.max(
         ...statusChartData.map(
@@ -310,26 +283,22 @@ const AdminDashboard = () => {
         "Dec"
     ];
 
-    const maintenanceTrend =
-        monthNames.map((month, index) => {
-
+    const maintenanceTrend = monthNames.map(
+        (month, index) => {
             const found =
                 dashboardData.maintenanceTrend.find(
                     (item) =>
-                        Number(
-                            item.month_number
-                        ) === index + 1 ||
-                        item.month === month
+                        Number(item?.month_number) ===
+                            index + 1 ||
+                        item?.month === month
                 );
 
             return {
                 month,
-                total:
-                    Number(
-                        found?.total || 0
-                    )
+                total: Number(found?.total || 0)
             };
-        });
+        }
+    );
 
     const maxMonthly = Math.max(
         ...maintenanceTrend.map(
@@ -345,30 +314,58 @@ const AdminDashboard = () => {
     const equipmentHealth =
         dashboardData.equipmentHealth;
 
-    const goodEquipment =
-        Number(
-            equipmentHealth.good || 0
-        );
+    const goodEquipment = Number(
+        equipmentHealth.good || 0
+    );
 
-    const warningEquipment =
-        Number(
-            equipmentHealth.warning || 0
-        );
+    const warningEquipment = Number(
+        equipmentHealth.warning || 0
+    );
 
-    const criticalEquipment =
-        Number(
-            equipmentHealth.critical || 0
-        );
+    const criticalEquipment = Number(
+        equipmentHealth.critical || 0
+    );
+
+    const totalHealthEquipment =
+        goodEquipment +
+        warningEquipment +
+        criticalEquipment;
+
+    const calculatedGoodPercentage =
+        totalHealthEquipment > 0
+            ? Math.round(
+                  (goodEquipment /
+                      totalHealthEquipment) *
+                      100
+              )
+            : 0;
 
     const goodPercentage =
         Number(
-            equipmentHealth.goodPercentage || 0
-        );
+            equipmentHealth.goodPercentage
+        ) > 0
+            ? Number(
+                  equipmentHealth.goodPercentage
+              )
+            : calculatedGoodPercentage;
+
+    const warningPercentage =
+        totalHealthEquipment > 0
+            ? (warningEquipment /
+                  totalHealthEquipment) *
+              100
+            : 0;
+
+    const goodDegree =
+        goodPercentage * 3.6;
+
+    const warningDegree =
+        (goodPercentage +
+            warningPercentage) *
+        3.6;
 
     // ======================================================
-    // NOTIFICATION DATA
-    //
-    // Semua dibuat dari database.
+    // NOTIFICATIONS
     // ======================================================
 
     const notifications = [];
@@ -381,24 +378,19 @@ const AdminDashboard = () => {
         dashboardData.recentMaintenance[0];
 
     if (newestMaintenance) {
-
         notifications.push({
-            id:
-                `maintenance-${newestMaintenance.id}`,
+            id: `maintenance-${newestMaintenance.id}`,
 
-            title:
-                "New maintenance request",
+            title: "New maintenance request",
 
             description:
                 newestMaintenance.equipment_name
                     ? `${newestMaintenance.equipment_name} memiliki maintenance request baru.`
                     : "Ada maintenance request baru.",
 
-            time:
-                newestMaintenance.created_at,
+            time: newestMaintenance.created_at,
 
-            type:
-                "maintenance",
+            type: "maintenance",
 
             detail:
                 newestMaintenance.description ||
@@ -414,26 +406,24 @@ const AdminDashboard = () => {
         dashboardData.approvalHistory[0];
 
     if (newestApproval) {
-
         notifications.push({
-            id:
-                `approval-${newestApproval.id}`,
+            id: `approval-${newestApproval.id}`,
 
-            title:
-                `${newestApproval.role || "User"} ${newestApproval.action || "Approval"}`,
+            title: `${newestApproval.role || "User"} ${
+                newestApproval.action || "Approval"
+            }`,
 
             description:
                 newestApproval.note ||
                 `Maintenance #${newestApproval.maintenance_id} memiliki aktivitas approval.`,
 
-            time:
-                newestApproval.created_at,
+            time: newestApproval.created_at,
 
-            type:
-                "approval",
+            type: "approval",
 
-            detail:
-                `Maintenance #${newestApproval.maintenance_id} - ${newestApproval.action}`
+            detail: `Maintenance #${newestApproval.maintenance_id} - ${
+                newestApproval.action || "-"
+            }`
         });
     }
 
@@ -442,25 +432,18 @@ const AdminDashboard = () => {
     // ------------------------------------------------------
 
     if (warningEquipment > 0) {
-
         notifications.push({
-            id:
-                "equipment-warning",
+            id: "equipment-warning",
 
-            title:
-                "Equipment requires attention",
+            title: "Equipment requires attention",
 
-            description:
-                `${warningEquipment} equipment sedang dalam status maintenance.`,
+            description: `${warningEquipment} equipment sedang dalam status warning.`,
 
-            time:
-                new Date(),
+            time: new Date(),
 
-            type:
-                "warning",
+            type: "warning",
 
-            detail:
-                `${warningEquipment} equipment berada dalam kategori warning.`
+            detail: `${warningEquipment} equipment berada dalam kategori warning.`
         });
     }
 
@@ -469,17 +452,13 @@ const AdminDashboard = () => {
     // ======================================================
 
     const formatTime = (dateValue) => {
-
         if (!dateValue) {
             return "-";
         }
 
-        const date =
-            new Date(dateValue);
+        const date = new Date(dateValue);
 
-        if (Number.isNaN(
-            date.getTime()
-        )) {
+        if (Number.isNaN(date.getTime())) {
             return "-";
         }
 
@@ -496,27 +475,19 @@ const AdminDashboard = () => {
     // NOTIFICATION CLICK
     // ======================================================
 
-    const handleNotificationClick =
-        (notification) => {
-
-            setSelectedNotification(
-                notification
-            );
-
-            setShowNotifications(
-                false
-            );
-        };
+    const handleNotificationClick = (
+        notification
+    ) => {
+        setSelectedNotification(notification);
+        setShowNotifications(false);
+    };
 
     // ======================================================
     // CLOSE NOTIFICATION
     // ======================================================
 
     const closeNotification = () => {
-
-        setSelectedNotification(
-            null
-        );
+        setSelectedNotification(null);
     };
 
     // ======================================================
@@ -548,7 +519,6 @@ const AdminDashboard = () => {
                 {/* LEFT */}
 
                 <div>
-
                     <p className="dashboard-label">
                         ADMIN PANEL
                     </p>
@@ -562,7 +532,6 @@ const AdminDashboard = () => {
                         equipment dan maintenance
                         system.
                     </p>
-
                 </div>
 
                 {/* RIGHT */}
@@ -577,13 +546,12 @@ const AdminDashboard = () => {
                 >
 
                     {/* ==================================================
-                        NOTIFICATION
+                        NOTIFICATION BUTTON
                     ================================================== */}
 
                     <button
                         type="button"
                         onClick={() => {
-
                             setShowNotifications(
                                 !showNotifications
                             );
@@ -596,8 +564,7 @@ const AdminDashboard = () => {
                             position: "relative",
                             width: "58px",
                             height: "58px",
-                            border:
-                                "1px solid #dbe3ef",
+                            border: "1px solid #dbe3ef",
                             borderRadius: "14px",
                             background: "#ffffff",
                             display: "flex",
@@ -607,7 +574,6 @@ const AdminDashboard = () => {
                             color: "#475569"
                         }}
                     >
-
                         <Bell size={23} />
 
                         {notifications.length > 0 && (
@@ -627,16 +593,12 @@ const AdminDashboard = () => {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    border:
-                                        "2px solid #ffffff"
+                                    border: "2px solid #ffffff"
                                 }}
                             >
-                                {
-                                    notifications.length
-                                }
+                                {notifications.length}
                             </span>
                         )}
-
                     </button>
 
                     {/* ==================================================
@@ -644,16 +606,15 @@ const AdminDashboard = () => {
                     ================================================== */}
 
                     {showNotifications && (
-
                         <div
                             style={{
                                 position: "absolute",
                                 top: "68px",
                                 right: "150px",
                                 width: "390px",
+                                maxWidth: "calc(100vw - 30px)",
                                 background: "#ffffff",
-                                border:
-                                    "1px solid #e2e8f0",
+                                border: "1px solid #e2e8f0",
                                 borderRadius: "16px",
                                 boxShadow:
                                     "0 20px 50px rgba(15,23,42,.18)",
@@ -664,27 +625,21 @@ const AdminDashboard = () => {
 
                             <div
                                 style={{
-                                    padding:
-                                        "18px 20px",
+                                    padding: "18px 20px",
                                     borderBottom:
                                         "1px solid #e2e8f0",
                                     display: "flex",
                                     justifyContent:
                                         "space-between",
-                                    alignItems:
-                                        "center"
+                                    alignItems: "center"
                                 }}
                             >
-
                                 <div>
-
                                     <h3
                                         style={{
                                             margin: 0,
-                                            color:
-                                                "#0f172a",
-                                            fontSize:
-                                                "19px"
+                                            color: "#0f172a",
+                                            fontSize: "19px"
                                         }}
                                     >
                                         Notifications
@@ -692,48 +647,36 @@ const AdminDashboard = () => {
 
                                     <p
                                         style={{
-                                            margin:
-                                                "4px 0 0",
-                                            color:
-                                                "#64748b",
-                                            fontSize:
-                                                "13px"
+                                            margin: "4px 0 0",
+                                            color: "#64748b",
+                                            fontSize: "13px"
                                         }}
                                     >
-                                        {
-                                            notifications.length
-                                        }{" "}
+                                        {notifications.length}{" "}
                                         notification
                                     </p>
-
                                 </div>
 
                                 <Bell
                                     size={23}
                                     color="#2563eb"
                                 />
-
                             </div>
 
                             {notifications.length === 0 ? (
-
                                 <div
                                     style={{
                                         padding: "30px",
                                         textAlign: "center",
-                                        color:
-                                            "#64748b"
+                                        color: "#64748b"
                                     }}
                                 >
                                     Belum ada
                                     notification.
                                 </div>
-
                             ) : (
-
                                 notifications.map(
                                     (notification) => (
-
                                         <button
                                             key={
                                                 notification.id
@@ -763,15 +706,11 @@ const AdminDashboard = () => {
                                                     "pointer"
                                             }}
                                         >
-
                                             <div
                                                 style={{
-                                                    width:
-                                                        "44px",
-                                                    height:
-                                                        "44px",
-                                                    flexShrink:
-                                                        0,
+                                                    width: "44px",
+                                                    height: "44px",
+                                                    flexShrink: 0,
                                                     borderRadius:
                                                         "12px",
                                                     display:
@@ -798,38 +737,29 @@ const AdminDashboard = () => {
                                                             : "#ea580c"
                                                 }}
                                             >
-
                                                 {notification.type ===
                                                     "maintenance" && (
                                                     <Wrench
-                                                        size={
-                                                            21
-                                                        }
+                                                        size={21}
                                                     />
                                                 )}
 
                                                 {notification.type ===
                                                     "approval" && (
                                                     <CheckCircle
-                                                        size={
-                                                            21
-                                                        }
+                                                        size={21}
                                                     />
                                                 )}
 
                                                 {notification.type ===
                                                     "warning" && (
                                                     <AlertTriangle
-                                                        size={
-                                                            21
-                                                        }
+                                                        size={21}
                                                     />
                                                 )}
-
                                             </div>
 
                                             <div>
-
                                                 <strong
                                                     style={{
                                                         display:
@@ -872,15 +802,11 @@ const AdminDashboard = () => {
                                                             "#94a3b8"
                                                     }}
                                                 >
-                                                    {
-                                                        formatTime(
-                                                            notification.time
-                                                        )
-                                                    }
+                                                    {formatTime(
+                                                        notification.time
+                                                    )}
                                                 </small>
-
                                             </div>
-
                                         </button>
                                     )
                                 )
@@ -892,7 +818,6 @@ const AdminDashboard = () => {
                                     textAlign: "center"
                                 }}
                             >
-
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -911,36 +836,29 @@ const AdminDashboard = () => {
                                 >
                                     Close Notifications
                                 </button>
-
                             </div>
-
                         </div>
                     )}
 
                     {/* ==================================================
-                        SYSTEM OVERVIEW
+                        SYSTEM OVERVIEW BUTTON
                     ================================================== */}
 
                     <button
                         type="button"
                         className="dashboard-date"
                         onClick={() =>
-                            setShowSystemOverview(
-                                true
-                            )
+                            setShowSystemOverview(true)
                         }
                     >
-
                         <Activity size={18} />
 
                         <span>
                             System Overview
                         </span>
-
                     </button>
 
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -948,15 +866,13 @@ const AdminDashboard = () => {
             ================================================== */}
 
             {error && (
-
                 <div
                     style={{
                         marginBottom: "16px",
                         padding: "13px 16px",
                         borderRadius: "10px",
                         background: "#fef2f2",
-                        border:
-                            "1px solid #fecaca",
+                        border: "1px solid #fecaca",
                         color: "#b91c1c",
                         display: "flex",
                         justifyContent:
@@ -965,35 +881,24 @@ const AdminDashboard = () => {
                         gap: "15px"
                     }}
                 >
-
                     <span>
-                        Gagal memuat data:
-                        {" "}
-                        {error}
+                        Gagal memuat data: {error}
                     </span>
 
                     <button
                         type="button"
-                        onClick={
-                            refreshDashboard
-                        }
+                        onClick={refreshDashboard}
                         style={{
                             border: "none",
-                            background:
-                                "#b91c1c",
-                            color:
-                                "#ffffff",
-                            padding:
-                                "7px 12px",
-                            borderRadius:
-                                "7px",
-                            cursor:
-                                "pointer"
+                            background: "#b91c1c",
+                            color: "#ffffff",
+                            padding: "7px 12px",
+                            borderRadius: "7px",
+                            cursor: "pointer"
                         }}
                     >
                         Coba Lagi
                     </button>
-
                 </div>
             )}
 
@@ -1001,9 +906,7 @@ const AdminDashboard = () => {
                 TOP STATISTICS
             ================================================== */}
 
-            <div
-                className="dashboard-stat-grid"
-            >
+            <div className="dashboard-stat-grid">
 
                 <StatCard
                     title="Total Equipment"
@@ -1014,9 +917,7 @@ const AdminDashboard = () => {
                                   .totalEquipment
                     }
                     subtitle="Registered equipment"
-                    icon={
-                        <Package size={24} />
-                    }
+                    icon={<Package size={24} />}
                     variant="blue"
                 />
 
@@ -1029,9 +930,7 @@ const AdminDashboard = () => {
                                   .activeMaintenance
                     }
                     subtitle="Currently in progress"
-                    icon={
-                        <Wrench size={24} />
-                    }
+                    icon={<Wrench size={24} />}
                     variant="orange"
                 />
 
@@ -1044,9 +943,7 @@ const AdminDashboard = () => {
                                   .pendingApproval
                     }
                     subtitle="Supervisor / Manager"
-                    icon={
-                        <Clock size={24} />
-                    }
+                    icon={<Clock size={24} />}
                     variant="purple"
                 />
 
@@ -1059,9 +956,7 @@ const AdminDashboard = () => {
                                   .completed
                     }
                     subtitle="Maintenance completed"
-                    icon={
-                        <CheckCircle size={24} />
-                    }
+                    icon={<CheckCircle size={24} />}
                     variant="green"
                 />
 
@@ -1077,13 +972,9 @@ const AdminDashboard = () => {
                     marginTop: "20px"
                 }}
             >
-
-                <div
-                    className="card-header"
-                >
+                <div className="card-header">
 
                     <div>
-
                         <h3>
                             Maintenance Performance
                         </h3>
@@ -1092,11 +983,9 @@ const AdminDashboard = () => {
                             Key performance indicators
                             berdasarkan database
                         </p>
-
                     </div>
 
                     <Activity size={20} />
-
                 </div>
 
                 <div
@@ -1116,11 +1005,9 @@ const AdminDashboard = () => {
                             padding: "18px",
                             border:
                                 "1px solid #e2e8f0",
-                            borderRadius:
-                                "14px"
+                            borderRadius: "14px"
                         }}
                     >
-
                         <CheckCircle
                             size={25}
                             color="#2563eb"
@@ -1130,8 +1017,7 @@ const AdminDashboard = () => {
                             style={{
                                 margin:
                                     "12px 0 4px",
-                                color:
-                                    "#64748b"
+                                color: "#64748b"
                             }}
                         >
                             Completion Rate
@@ -1139,10 +1025,8 @@ const AdminDashboard = () => {
 
                         <strong
                             style={{
-                                fontSize:
-                                    "28px",
-                                color:
-                                    "#0f172a"
+                                fontSize: "28px",
+                                color: "#0f172a"
                             }}
                         >
                             {
@@ -1150,7 +1034,6 @@ const AdminDashboard = () => {
                                     .completionRate
                             }%
                         </strong>
-
                     </div>
 
                     {/* EQUIPMENT UPTIME */}
@@ -1160,11 +1043,9 @@ const AdminDashboard = () => {
                             padding: "18px",
                             border:
                                 "1px solid #e2e8f0",
-                            borderRadius:
-                                "14px"
+                            borderRadius: "14px"
                         }}
                     >
-
                         <Activity
                             size={25}
                             color="#16a34a"
@@ -1174,8 +1055,7 @@ const AdminDashboard = () => {
                             style={{
                                 margin:
                                     "12px 0 4px",
-                                color:
-                                    "#64748b"
+                                color: "#64748b"
                             }}
                         >
                             Equipment Uptime
@@ -1183,19 +1063,15 @@ const AdminDashboard = () => {
 
                         <strong
                             style={{
-                                fontSize:
-                                    "28px",
-                                color:
-                                    "#0f172a"
+                                fontSize: "28px",
+                                color: "#0f172a"
                             }}
                         >
-                            {
-                                dashboardData.stats
-                                    .equipmentUptime !==
-                                null
-                                    ? `${dashboardData.stats.equipmentUptime}%`
-                                    : "N/A"
-                            }
+                            {dashboardData.stats
+                                .equipmentUptime !==
+                            null
+                                ? `${dashboardData.stats.equipmentUptime}%`
+                                : "N/A"}
                         </strong>
 
                         {dashboardData.stats
@@ -1205,17 +1081,14 @@ const AdminDashboard = () => {
                                 style={{
                                     margin:
                                         "5px 0 0",
-                                    fontSize:
-                                        "12px",
-                                    color:
-                                        "#94a3b8"
+                                    fontSize: "12px",
+                                    color: "#94a3b8"
                                 }}
                             >
                                 Data uptime belum
                                 tersedia di database
                             </p>
                         )}
-
                     </div>
 
                     {/* ON TIME */}
@@ -1225,11 +1098,9 @@ const AdminDashboard = () => {
                             padding: "18px",
                             border:
                                 "1px solid #e2e8f0",
-                            borderRadius:
-                                "14px"
+                            borderRadius: "14px"
                         }}
                     >
-
                         <Activity
                             size={25}
                             color="#7c3aed"
@@ -1239,8 +1110,7 @@ const AdminDashboard = () => {
                             style={{
                                 margin:
                                     "12px 0 4px",
-                                color:
-                                    "#64748b"
+                                color: "#64748b"
                             }}
                         >
                             On-Time Maintenance
@@ -1248,19 +1118,15 @@ const AdminDashboard = () => {
 
                         <strong
                             style={{
-                                fontSize:
-                                    "28px",
-                                color:
-                                    "#0f172a"
+                                fontSize: "28px",
+                                color: "#0f172a"
                             }}
                         >
-                            {
-                                dashboardData.stats
-                                    .onTimeMaintenance !==
-                                null
-                                    ? `${dashboardData.stats.onTimeMaintenance}%`
-                                    : "N/A"
-                            }
+                            {dashboardData.stats
+                                .onTimeMaintenance !==
+                            null
+                                ? `${dashboardData.stats.onTimeMaintenance}%`
+                                : "N/A"}
                         </strong>
 
                         {dashboardData.stats
@@ -1270,21 +1136,17 @@ const AdminDashboard = () => {
                                 style={{
                                     margin:
                                         "5px 0 0",
-                                    fontSize:
-                                        "12px",
-                                    color:
-                                        "#94a3b8"
+                                    fontSize: "12px",
+                                    color: "#94a3b8"
                                 }}
                             >
                                 Due date belum
                                 tersedia di database
                             </p>
                         )}
-
                     </div>
 
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -1305,24 +1167,19 @@ const AdminDashboard = () => {
                     MAINTENANCE TREND
                 ================================================== */}
 
-                <div
-                    className="dashboard-card"
-                >
+                <div className="dashboard-card">
 
-                    <div
-                        className="card-header"
-                    >
+                    <div className="card-header">
 
                         <div>
-
                             <h3>
                                 Maintenance Trend
                             </h3>
 
                             <p>
-                                Monthly maintenance activity
+                                Monthly maintenance
+                                activity
                             </p>
-
                         </div>
 
                         <Activity size={20} />
@@ -1330,25 +1187,20 @@ const AdminDashboard = () => {
                     </div>
 
                     {loading ? (
-
                         <div
                             style={{
-                                minHeight:
-                                    "280px",
+                                minHeight: "280px",
                                 display: "flex",
                                 alignItems:
                                     "center",
                                 justifyContent:
                                     "center",
-                                color:
-                                    "#64748b"
+                                color: "#64748b"
                             }}
                         >
                             Memuat grafik...
                         </div>
-
                     ) : (
-
                         <div
                             style={{
                                 height: "300px",
@@ -1362,23 +1214,19 @@ const AdminDashboard = () => {
                                     "1px solid #e2e8f0"
                             }}
                         >
-
                             {maintenanceTrend.map(
                                 (item) => {
-
                                     const height =
                                         item.total === 0
                                             ? 4
                                             : Math.max(
-                                                (
-                                                    item.total /
-                                                    maxMonthly
-                                                ) * 200,
-                                                12
-                                            );
+                                                  (item.total /
+                                                      maxMonthly) *
+                                                      200,
+                                                  12
+                                              );
 
                                     return (
-
                                         <div
                                             key={
                                                 item.month
@@ -1395,11 +1243,9 @@ const AdminDashboard = () => {
                                                     "flex-end",
                                                 alignItems:
                                                     "center",
-                                                gap:
-                                                    "8px"
+                                                gap: "8px"
                                             }}
                                         >
-
                                             <span
                                                 style={{
                                                     fontSize:
@@ -1422,8 +1268,7 @@ const AdminDashboard = () => {
                                                         "100%",
                                                     maxWidth:
                                                         "42px",
-                                                    height:
-                                                        `${height}px`,
+                                                    height: `${height}px`,
                                                     minHeight:
                                                         "4px",
                                                     borderRadius:
@@ -1447,39 +1292,31 @@ const AdminDashboard = () => {
                                                     item.month
                                                 }
                                             </span>
-
                                         </div>
                                     );
                                 }
                             )}
-
                         </div>
                     )}
-
                 </div>
 
                 {/* ==================================================
                     EQUIPMENT HEALTH
                 ================================================== */}
 
-                <div
-                    className="dashboard-card"
-                >
+                <div className="dashboard-card">
 
-                    <div
-                        className="card-header"
-                    >
+                    <div className="card-header">
 
                         <div>
-
                             <h3>
                                 Equipment Health
                             </h3>
 
                             <p>
-                                Overall equipment condition
+                                Overall equipment
+                                condition
                             </p>
-
                         </div>
 
                         <Package size={20} />
@@ -1491,10 +1328,8 @@ const AdminDashboard = () => {
                             display: "flex",
                             flexDirection:
                                 "column",
-                            alignItems:
-                                "center",
-                            marginTop:
-                                "20px"
+                            alignItems: "center",
+                            marginTop: "20px"
                         }}
                     >
 
@@ -1502,33 +1337,14 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                width:
-                                    "220px",
-                                height:
-                                    "220px",
-                                borderRadius:
-                                    "50%",
+                                width: "220px",
+                                height: "220px",
+                                borderRadius: "50%",
                                 background:
                                     `conic-gradient(
-                                        #22c55e 0deg ${goodPercentage * 3.6}deg,
-                                        #f59e0b ${goodPercentage * 3.6}deg ${(goodPercentage + (
-                                            dashboardData.equipmentHealth.warning /
-                                            Math.max(
-                                                goodEquipment +
-                                                warningEquipment +
-                                                criticalEquipment,
-                                                1
-                                            )
-                                        ) * 100) * 3.6}deg,
-                                        #ef4444 ${(goodPercentage + (
-                                            dashboardData.equipmentHealth.warning /
-                                            Math.max(
-                                                goodEquipment +
-                                                warningEquipment +
-                                                criticalEquipment,
-                                                1
-                                            )
-                                        ) * 100) * 3.6}deg 360deg
+                                        #22c55e 0deg ${goodDegree}deg,
+                                        #f59e0b ${goodDegree}deg ${warningDegree}deg,
+                                        #ef4444 ${warningDegree}deg 360deg
                                     )`,
                                 display: "flex",
                                 alignItems:
@@ -1537,19 +1353,14 @@ const AdminDashboard = () => {
                                     "center"
                             }}
                         >
-
                             <div
                                 style={{
-                                    width:
-                                        "140px",
-                                    height:
-                                        "140px",
-                                    borderRadius:
-                                        "50%",
+                                    width: "140px",
+                                    height: "140px",
+                                    borderRadius: "50%",
                                     background:
                                         "#ffffff",
-                                    display:
-                                        "flex",
+                                    display: "flex",
                                     flexDirection:
                                         "column",
                                     alignItems:
@@ -1558,18 +1369,13 @@ const AdminDashboard = () => {
                                         "center"
                                 }}
                             >
-
                                 <strong
                                     style={{
-                                        fontSize:
-                                            "34px",
-                                        color:
-                                            "#0f172a"
+                                        fontSize: "34px",
+                                        color: "#0f172a"
                                     }}
                                 >
-                                    {
-                                        goodPercentage
-                                    }%
+                                    {goodPercentage}%
                                 </strong>
 
                                 <span
@@ -1580,26 +1386,21 @@ const AdminDashboard = () => {
                                 >
                                     Good
                                 </span>
-
                             </div>
-
                         </div>
 
                         {/* LEGEND */}
 
                         <div
                             style={{
-                                width:
-                                    "100%",
-                                marginTop:
-                                    "20px"
+                                width: "100%",
+                                marginTop: "20px"
                             }}
                         >
 
                             <div
                                 style={{
-                                    display:
-                                        "flex",
+                                    display: "flex",
                                     justifyContent:
                                         "space-between",
                                     marginBottom:
@@ -1611,16 +1412,13 @@ const AdminDashboard = () => {
                                 </span>
 
                                 <strong>
-                                    {
-                                        goodEquipment
-                                    }
+                                    {goodEquipment}
                                 </strong>
                             </div>
 
                             <div
                                 style={{
-                                    display:
-                                        "flex",
+                                    display: "flex",
                                     justifyContent:
                                         "space-between",
                                     marginBottom:
@@ -1632,16 +1430,13 @@ const AdminDashboard = () => {
                                 </span>
 
                                 <strong>
-                                    {
-                                        warningEquipment
-                                    }
+                                    {warningEquipment}
                                 </strong>
                             </div>
 
                             <div
                                 style={{
-                                    display:
-                                        "flex",
+                                    display: "flex",
                                     justifyContent:
                                         "space-between"
                                 }}
@@ -1651,18 +1446,13 @@ const AdminDashboard = () => {
                                 </span>
 
                                 <strong>
-                                    {
-                                        criticalEquipment
-                                    }
+                                    {criticalEquipment}
                                 </strong>
                             </div>
 
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -1676,21 +1466,18 @@ const AdminDashboard = () => {
                 }}
             >
 
-                <div
-                    className="card-header"
-                >
+                <div className="card-header">
 
                     <div>
-
                         <h3>
                             Maintenance Status
                         </h3>
 
                         <p>
-                            Distribusi status maintenance
-                            dari database
+                            Distribusi status
+                            maintenance dari
+                            database
                         </p>
-
                     </div>
 
                     <Wrench size={20} />
@@ -1702,17 +1489,15 @@ const AdminDashboard = () => {
                         marginTop: "20px"
                     }}
                 >
-
                     {statusChartData.map(
                         (item) => {
 
                             const percentage =
                                 item.total === 0
                                     ? 0
-                                    : (
-                                        item.total /
-                                        maxStatus
-                                    ) * 100;
+                                    : (item.total /
+                                          maxStatus) *
+                                      100;
 
                             let barColor =
                                 "#7c3aed";
@@ -1757,8 +1542,15 @@ const AdminDashboard = () => {
                                     "#9333ea";
                             }
 
-                            return (
+                            if (
+                                item.key ===
+                                "PENDING_SUPERVISOR"
+                            ) {
+                                barColor =
+                                    "#a855f7";
+                            }
 
+                            return (
                                 <div
                                     key={
                                         item.key
@@ -1779,7 +1571,6 @@ const AdminDashboard = () => {
                                                 "7px"
                                         }}
                                     >
-
                                         <span
                                             style={{
                                                 fontSize:
@@ -1809,15 +1600,12 @@ const AdminDashboard = () => {
                                                 item.total
                                             }
                                         </span>
-
                                     </div>
 
                                     <div
                                         style={{
-                                            width:
-                                                "100%",
-                                            height:
-                                                "8px",
+                                            width: "100%",
+                                            height: "8px",
                                             borderRadius:
                                                 "999px",
                                             background:
@@ -1826,11 +1614,9 @@ const AdminDashboard = () => {
                                                 "hidden"
                                         }}
                                     >
-
                                         <div
                                             style={{
-                                                width:
-                                                    `${percentage}%`,
+                                                width: `${percentage}%`,
                                                 height:
                                                     "100%",
                                                 borderRadius:
@@ -1841,16 +1627,12 @@ const AdminDashboard = () => {
                                                     "width .3s ease"
                                             }}
                                         />
-
                                     </div>
-
                                 </div>
                             );
                         }
                     )}
-
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -1864,21 +1646,17 @@ const AdminDashboard = () => {
                 }}
             >
 
-                <div
-                    className="card-header"
-                >
+                <div className="card-header">
 
                     <div>
-
                         <h3>
                             Approval History
                         </h3>
 
                         <p>
-                            Riwayat approval Supervisor
-                            dan Manager
+                            Riwayat approval
+                            Supervisor dan Manager
                         </p>
-
                     </div>
 
                     <UserCheck size={20} />
@@ -1887,10 +1665,8 @@ const AdminDashboard = () => {
 
                 <div
                     style={{
-                        marginTop:
-                            "20px",
-                        overflowX:
-                            "auto"
+                        marginTop: "20px",
+                        overflowX: "auto"
                     }}
                 >
 
@@ -1900,12 +1676,9 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                padding:
-                                    "25px",
-                                textAlign:
-                                    "center",
-                                color:
-                                    "#64748b"
+                                padding: "25px",
+                                textAlign: "center",
+                                color: "#64748b"
                             }}
                         >
                             Belum ada approval
@@ -1916,15 +1689,12 @@ const AdminDashboard = () => {
 
                         <table
                             style={{
-                                width:
-                                    "100%",
+                                width: "100%",
                                 borderCollapse:
                                     "collapse"
                             }}
                         >
-
                             <thead>
-
                                 <tr
                                     style={{
                                         borderBottom:
@@ -1933,7 +1703,6 @@ const AdminDashboard = () => {
                                             "left"
                                     }}
                                 >
-
                                     <th
                                         style={{
                                             padding:
@@ -1978,18 +1747,14 @@ const AdminDashboard = () => {
                                     >
                                         Date
                                     </th>
-
                                 </tr>
-
                             </thead>
 
                             <tbody>
-
                                 {dashboardData
                                     .approvalHistory
                                     .map(
                                         (item) => (
-
                                             <tr
                                                 key={
                                                     item.id
@@ -1999,7 +1764,6 @@ const AdminDashboard = () => {
                                                         "1px solid #f1f5f9"
                                                 }}
                                             >
-
                                                 <td
                                                     style={{
                                                         padding:
@@ -2020,7 +1784,7 @@ const AdminDashboard = () => {
                                                 >
                                                     {
                                                         item.username ||
-                                                        `User #${item.user_id}`
+                                                        `User #${item.user_id || "-"}`
                                                     }
                                                 </td>
 
@@ -2031,7 +1795,8 @@ const AdminDashboard = () => {
                                                     }}
                                                 >
                                                     {
-                                                        item.role
+                                                        item.role ||
+                                                        "-"
                                                     }
                                                 </td>
 
@@ -2044,7 +1809,8 @@ const AdminDashboard = () => {
                                                     }}
                                                 >
                                                     {
-                                                        item.action
+                                                        item.action ||
+                                                        "-"
                                                     }
                                                 </td>
 
@@ -2056,25 +1822,17 @@ const AdminDashboard = () => {
                                                             "#64748b"
                                                     }}
                                                 >
-                                                    {
-                                                        formatTime(
-                                                            item.created_at
-                                                        )
-                                                    }
+                                                    {formatTime(
+                                                        item.created_at
+                                                    )}
                                                 </td>
-
                                             </tr>
-
                                         )
                                     )}
-
                             </tbody>
-
                         </table>
                     )}
-
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -2088,21 +1846,17 @@ const AdminDashboard = () => {
                 }}
             >
 
-                <div
-                    className="card-header"
-                >
+                <div className="card-header">
 
                     <div>
-
                         <h3>
                             Recent Maintenance
                         </h3>
 
                         <p>
-                            Maintenance request terbaru
-                            dari database
+                            Maintenance request
+                            terbaru dari database
                         </p>
-
                     </div>
 
                     <Wrench size={20} />
@@ -2111,10 +1865,8 @@ const AdminDashboard = () => {
 
                 <div
                     style={{
-                        marginTop:
-                            "20px",
-                        overflowX:
-                            "auto"
+                        marginTop: "20px",
+                        overflowX: "auto"
                     }}
                 >
 
@@ -2124,12 +1876,9 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                padding:
-                                    "25px",
-                                textAlign:
-                                    "center",
-                                color:
-                                    "#64748b"
+                                padding: "25px",
+                                textAlign: "center",
+                                color: "#64748b"
                             }}
                         >
                             Belum ada maintenance
@@ -2140,15 +1889,12 @@ const AdminDashboard = () => {
 
                         <table
                             style={{
-                                width:
-                                    "100%",
+                                width: "100%",
                                 borderCollapse:
                                     "collapse"
                             }}
                         >
-
                             <thead>
-
                                 <tr
                                     style={{
                                         borderBottom:
@@ -2157,7 +1903,6 @@ const AdminDashboard = () => {
                                             "left"
                                     }}
                                 >
-
                                     <th
                                         style={{
                                             padding:
@@ -2202,18 +1947,14 @@ const AdminDashboard = () => {
                                     >
                                         Created
                                     </th>
-
                                 </tr>
-
                             </thead>
 
                             <tbody>
-
                                 {dashboardData
                                     .recentMaintenance
                                     .map(
                                         (item) => (
-
                                             <tr
                                                 key={
                                                     item.id
@@ -2223,14 +1964,12 @@ const AdminDashboard = () => {
                                                         "1px solid #f1f5f9"
                                                 }}
                                             >
-
                                                 <td
                                                     style={{
                                                         padding:
                                                             "12px"
                                                     }}
                                                 >
-
                                                     <strong>
                                                         {
                                                             item.equipment_name ||
@@ -2251,7 +1990,6 @@ const AdminDashboard = () => {
                                                             "-"
                                                         }
                                                     </div>
-
                                                 </td>
 
                                                 <td
@@ -2303,7 +2041,8 @@ const AdminDashboard = () => {
                                                         }}
                                                     >
                                                         {
-                                                            item.status
+                                                            item.status ||
+                                                            "-"
                                                         }
                                                     </span>
                                                 </td>
@@ -2316,25 +2055,17 @@ const AdminDashboard = () => {
                                                             "#64748b"
                                                     }}
                                                 >
-                                                    {
-                                                        formatTime(
-                                                            item.created_at
-                                                        )
-                                                    }
+                                                    {formatTime(
+                                                        item.created_at
+                                                    )}
                                                 </td>
-
                                             </tr>
-
                                         )
                                     )}
-
                             </tbody>
-
                         </table>
                     )}
-
                 </div>
-
             </div>
 
             {/* ==================================================
@@ -2344,17 +2075,13 @@ const AdminDashboard = () => {
             <div
                 className="dashboard-card"
                 style={{
-                    marginTop:
-                        "20px"
+                    marginTop: "20px"
                 }}
             >
 
-                <div
-                    className="card-header"
-                >
+                <div className="card-header">
 
                     <div>
-
                         <h3>
                             System Information
                         </h3>
@@ -2362,7 +2089,6 @@ const AdminDashboard = () => {
                         <p>
                             Current system status
                         </p>
-
                     </div>
 
                     <Settings size={20} />
@@ -2371,14 +2097,11 @@ const AdminDashboard = () => {
 
                 <div
                     style={{
-                        display:
-                            "grid",
+                        display: "grid",
                         gridTemplateColumns:
                             "repeat(2, 1fr)",
-                        gap:
-                            "15px",
-                        marginTop:
-                            "15px"
+                        gap: "15px",
+                        marginTop: "15px"
                     }}
                 >
 
@@ -2386,23 +2109,19 @@ const AdminDashboard = () => {
 
                     <div
                         style={{
-                            padding:
-                                "15px",
-                            borderRadius:
-                                "12px",
+                            padding: "15px",
+                            borderRadius: "12px",
                             background:
                                 "#f8fafc"
                         }}
                     >
-
                         <Users size={21} />
 
                         <strong
                             style={{
                                 display:
                                     "block",
-                                marginTop:
-                                    "8px"
+                                marginTop: "8px"
                             }}
                         >
                             Active System
@@ -2412,36 +2131,30 @@ const AdminDashboard = () => {
                             style={{
                                 color:
                                     "#16a34a",
-                                fontSize:
-                                    "13px"
+                                fontSize: "13px"
                             }}
                         >
                             ● Operational
                         </span>
-
                     </div>
 
                     {/* DATABASE */}
 
                     <div
                         style={{
-                            padding:
-                                "15px",
-                            borderRadius:
-                                "12px",
+                            padding: "15px",
+                            borderRadius: "12px",
                             background:
                                 "#f8fafc"
                         }}
                     >
-
                         <Activity size={21} />
 
                         <strong
                             style={{
                                 display:
                                     "block",
-                                marginTop:
-                                    "8px"
+                                marginTop: "8px"
                             }}
                         >
                             Database
@@ -2449,12 +2162,10 @@ const AdminDashboard = () => {
 
                         <span
                             style={{
-                                color:
-                                    error
-                                        ? "#dc2626"
-                                        : "#16a34a",
-                                fontSize:
-                                    "13px"
+                                color: error
+                                    ? "#dc2626"
+                                    : "#16a34a",
+                                fontSize: "13px"
                             }}
                         >
                             ●{" "}
@@ -2462,7 +2173,6 @@ const AdminDashboard = () => {
                                 ? "Connection Error"
                                 : "Connected"}
                         </span>
-
                     </div>
 
                 </div>
@@ -2471,58 +2181,41 @@ const AdminDashboard = () => {
 
                 <button
                     type="button"
-                    onClick={
-                        refreshDashboard
-                    }
+                    onClick={refreshDashboard}
                     disabled={loading}
                     style={{
-                        width:
-                            "100%",
-                        marginTop:
-                            "20px",
-                        padding:
-                            "12px",
+                        width: "100%",
+                        marginTop: "20px",
+                        padding: "12px",
                         border:
                             "1px solid #2563eb",
-                        borderRadius:
-                            "10px",
-                        background:
-                            "#ffffff",
-                        color:
-                            "#2563eb",
-                        fontWeight:
-                            "600",
-                        cursor:
-                            loading
-                                ? "not-allowed"
-                                : "pointer",
-                        display:
-                            "flex",
-                        alignItems:
-                            "center",
+                        borderRadius: "10px",
+                        background: "#ffffff",
+                        color: "#2563eb",
+                        fontWeight: "600",
+                        cursor: loading
+                            ? "not-allowed"
+                            : "pointer",
+                        display: "flex",
+                        alignItems: "center",
                         justifyContent:
                             "center",
-                        gap:
-                            "8px"
+                        gap: "8px"
                     }}
                 >
-
                     <RefreshCw
                         size={17}
                         style={{
-                            animation:
-                                loading
-                                    ? "spin 1s linear infinite"
-                                    : "none"
+                            animation: loading
+                                ? "spin 1s linear infinite"
+                                : "none"
                         }}
                     />
 
                     {loading
                         ? "Memuat Data..."
                         : "Refresh Data"}
-
                 </button>
-
             </div>
 
             {/* ==================================================
@@ -2530,42 +2223,29 @@ const AdminDashboard = () => {
             ================================================== */}
 
             {selectedNotification && (
-
                 <div
                     style={{
-                        position:
-                            "fixed",
+                        position: "fixed",
                         inset: 0,
                         background:
                             "rgba(15,23,42,.45)",
-                        display:
-                            "flex",
+                        display: "flex",
                         alignItems:
                             "center",
                         justifyContent:
                             "center",
-                        padding:
-                            "20px",
-                        zIndex:
-                            10000
+                        padding: "20px",
+                        zIndex: 10000
                     }}
-                    onClick={
-                        closeNotification
-                    }
+                    onClick={closeNotification}
                 >
-
                     <div
                         style={{
-                            width:
-                                "100%",
-                            maxWidth:
-                                "500px",
-                            background:
-                                "#ffffff",
-                            borderRadius:
-                                "18px",
-                            padding:
-                                "28px",
+                            width: "100%",
+                            maxWidth: "500px",
+                            background: "#ffffff",
+                            borderRadius: "18px",
+                            padding: "28px",
                             boxShadow:
                                 "0 25px 70px rgba(0,0,0,.2)"
                         }}
@@ -2576,23 +2256,18 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                display:
-                                    "flex",
+                                display: "flex",
                                 alignItems:
                                     "center",
                                 justifyContent:
                                     "space-between",
-                                marginBottom:
-                                    "20px"
+                                marginBottom: "20px"
                             }}
                         >
-
                             <h2
                                 style={{
-                                    margin:
-                                        0,
-                                    color:
-                                        "#0f172a"
+                                    margin: 0,
+                                    color: "#0f172a"
                                 }}
                             >
                                 Notification Detail
@@ -2604,12 +2279,9 @@ const AdminDashboard = () => {
                                     closeNotification
                                 }
                                 style={{
-                                    width:
-                                        "38px",
-                                    height:
-                                        "38px",
-                                    border:
-                                        "none",
+                                    width: "38px",
+                                    height: "38px",
+                                    border: "none",
                                     borderRadius:
                                         "10px",
                                     background:
@@ -2626,19 +2298,15 @@ const AdminDashboard = () => {
                             >
                                 <X size={20} />
                             </button>
-
                         </div>
 
                         <div
                             style={{
-                                width:
-                                    "64px",
-                                height:
-                                    "64px",
+                                width: "64px",
+                                height: "64px",
                                 borderRadius:
                                     "16px",
-                                display:
-                                    "flex",
+                                display: "flex",
                                 alignItems:
                                     "center",
                                 justifyContent:
@@ -2663,19 +2331,14 @@ const AdminDashboard = () => {
                                         : "#ea580c"
                             }}
                         >
-
                             {selectedNotification.type ===
                                 "maintenance" && (
-                                <Wrench
-                                    size={30}
-                                />
+                                <Wrench size={30} />
                             )}
 
                             {selectedNotification.type ===
                                 "approval" && (
-                                <CheckCircle
-                                    size={30}
-                                />
+                                <CheckCircle size={30} />
                             )}
 
                             {selectedNotification.type ===
@@ -2684,7 +2347,6 @@ const AdminDashboard = () => {
                                     size={30}
                                 />
                             )}
-
                         </div>
 
                         <h3
@@ -2693,8 +2355,7 @@ const AdminDashboard = () => {
                                     "0 0 8px",
                                 color:
                                     "#0f172a",
-                                fontSize:
-                                    "21px"
+                                fontSize: "21px"
                             }}
                         >
                             {
@@ -2708,8 +2369,7 @@ const AdminDashboard = () => {
                                     "0 0 10px",
                                 color:
                                     "#475569",
-                                fontSize:
-                                    "15px"
+                                fontSize: "15px"
                             }}
                         >
                             {
@@ -2721,23 +2381,19 @@ const AdminDashboard = () => {
                             style={{
                                 color:
                                     "#94a3b8",
-                                fontSize:
-                                    "13px"
+                                fontSize: "13px"
                             }}
                         >
-                            {
-                                formatTime(
-                                    selectedNotification.time
-                                )
-                            }
+                            {formatTime(
+                                selectedNotification.time
+                            )}
                         </span>
 
                         <div
                             style={{
                                 marginTop:
                                     "22px",
-                                padding:
-                                    "17px",
+                                padding: "17px",
                                 borderRadius:
                                     "12px",
                                 background:
@@ -2746,11 +2402,9 @@ const AdminDashboard = () => {
                                     "1px solid #e2e8f0"
                             }}
                         >
-
                             {
                                 selectedNotification.detail
                             }
-
                         </div>
 
                         <button
@@ -2759,31 +2413,22 @@ const AdminDashboard = () => {
                                 closeNotification
                             }
                             style={{
-                                width:
-                                    "100%",
-                                marginTop:
-                                    "20px",
-                                padding:
-                                    "13px",
-                                border:
-                                    "none",
+                                width: "100%",
+                                marginTop: "20px",
+                                padding: "13px",
+                                border: "none",
                                 borderRadius:
                                     "10px",
                                 background:
                                     "#2563eb",
-                                color:
-                                    "#ffffff",
-                                fontWeight:
-                                    "600",
-                                cursor:
-                                    "pointer"
+                                color: "#ffffff",
+                                fontWeight: "600",
+                                cursor: "pointer"
                             }}
                         >
                             Close
                         </button>
-
                     </div>
-
                 </div>
             )}
 
@@ -2792,24 +2437,19 @@ const AdminDashboard = () => {
             ================================================== */}
 
             {showSystemOverview && (
-
                 <div
                     style={{
-                        position:
-                            "fixed",
+                        position: "fixed",
                         inset: 0,
                         background:
                             "rgba(15,23,42,.45)",
-                        display:
-                            "flex",
+                        display: "flex",
                         alignItems:
                             "center",
                         justifyContent:
                             "center",
-                        padding:
-                            "20px",
-                        zIndex:
-                            9999
+                        padding: "20px",
+                        zIndex: 9999
                     }}
                     onClick={() =>
                         setShowSystemOverview(
@@ -2817,19 +2457,13 @@ const AdminDashboard = () => {
                         )
                     }
                 >
-
                     <div
                         style={{
-                            width:
-                                "100%",
-                            maxWidth:
-                                "600px",
-                            background:
-                                "#ffffff",
-                            borderRadius:
-                                "18px",
-                            padding:
-                                "28px",
+                            width: "100%",
+                            maxWidth: "600px",
+                            background: "#ffffff",
+                            borderRadius: "18px",
+                            padding: "28px",
                             boxShadow:
                                 "0 25px 70px rgba(0,0,0,.2)"
                         }}
@@ -2840,8 +2474,7 @@ const AdminDashboard = () => {
 
                         <div
                             style={{
-                                display:
-                                    "flex",
+                                display: "flex",
                                 justifyContent:
                                     "space-between",
                                 alignItems:
@@ -2850,13 +2483,10 @@ const AdminDashboard = () => {
                                     "22px"
                             }}
                         >
-
                             <div>
-
                                 <h2
                                     style={{
-                                        margin:
-                                            0,
+                                        margin: 0,
                                         color:
                                             "#0f172a"
                                     }}
@@ -2872,9 +2502,9 @@ const AdminDashboard = () => {
                                             "#64748b"
                                     }}
                                 >
-                                    Current system status
+                                    Current system
+                                    status
                                 </p>
-
                             </div>
 
                             <button
@@ -2885,12 +2515,9 @@ const AdminDashboard = () => {
                                     )
                                 }
                                 style={{
-                                    width:
-                                        "38px",
-                                    height:
-                                        "38px",
-                                    border:
-                                        "none",
+                                    width: "38px",
+                                    height: "38px",
+                                    border: "none",
                                     borderRadius:
                                         "10px",
                                     background:
@@ -2907,15 +2534,13 @@ const AdminDashboard = () => {
                             >
                                 <X size={20} />
                             </button>
-
                         </div>
 
                         {/* SYSTEM STATUS */}
 
                         <div
                             style={{
-                                padding:
-                                    "18px",
+                                padding: "18px",
                                 borderRadius:
                                     "14px",
                                 background:
@@ -2926,25 +2551,21 @@ const AdminDashboard = () => {
                                     "18px"
                             }}
                         >
-
                             <div
                                 style={{
                                     display:
                                         "flex",
                                     alignItems:
                                         "center",
-                                    gap:
-                                        "12px"
+                                    gap: "12px"
                                 }}
                             >
-
                                 <CheckCircle
                                     size={28}
                                     color="#16a34a"
                                 />
 
                                 <div>
-
                                     <strong
                                         style={{
                                             display:
@@ -2959,30 +2580,29 @@ const AdminDashboard = () => {
                                     <span
                                         style={{
                                             color:
-                                                "#15803d",
+                                                error
+                                                    ? "#dc2626"
+                                                    : "#15803d",
                                             fontSize:
                                                 "13px"
                                         }}
                                     >
-                                        Database connected
+                                        {error
+                                            ? "Database connection error"
+                                            : "Database connected"}
                                     </span>
-
                                 </div>
-
                             </div>
-
                         </div>
 
                         {/* STAT GRID */}
 
                         <div
                             style={{
-                                display:
-                                    "grid",
+                                display: "grid",
                                 gridTemplateColumns:
                                     "repeat(2, 1fr)",
-                                gap:
-                                    "14px"
+                                gap: "14px"
                             }}
                         >
 
@@ -2996,7 +2616,6 @@ const AdminDashboard = () => {
                                         "13px"
                                 }}
                             >
-
                                 <Package
                                     size={23}
                                     color="#2563eb"
@@ -3018,7 +2637,6 @@ const AdminDashboard = () => {
                                 <span>
                                     Total Equipment
                                 </span>
-
                             </div>
 
                             <div
@@ -3031,7 +2649,6 @@ const AdminDashboard = () => {
                                         "13px"
                                 }}
                             >
-
                                 <Wrench
                                     size={23}
                                     color="#ea580c"
@@ -3053,7 +2670,6 @@ const AdminDashboard = () => {
                                 <span>
                                     Active Maintenance
                                 </span>
-
                             </div>
 
                             <div
@@ -3066,7 +2682,6 @@ const AdminDashboard = () => {
                                         "13px"
                                 }}
                             >
-
                                 <Clock
                                     size={23}
                                     color="#7c3aed"
@@ -3088,7 +2703,6 @@ const AdminDashboard = () => {
                                 <span>
                                     Pending Approval
                                 </span>
-
                             </div>
 
                             <div
@@ -3101,7 +2715,6 @@ const AdminDashboard = () => {
                                         "13px"
                                 }}
                             >
-
                                 <CheckCircle
                                     size={23}
                                     color="#16a34a"
@@ -3123,7 +2736,6 @@ const AdminDashboard = () => {
                                 <span>
                                     Completed
                                 </span>
-
                             </div>
 
                         </div>
@@ -3133,13 +2745,11 @@ const AdminDashboard = () => {
                             onClick={
                                 refreshDashboard
                             }
+                            disabled={loading}
                             style={{
-                                width:
-                                    "100%",
-                                marginTop:
-                                    "20px",
-                                padding:
-                                    "12px",
+                                width: "100%",
+                                marginTop: "20px",
+                                padding: "12px",
                                 border:
                                     "1px solid #2563eb",
                                 borderRadius:
@@ -3151,14 +2761,17 @@ const AdminDashboard = () => {
                                 fontWeight:
                                     "600",
                                 cursor:
-                                    "pointer"
+                                    loading
+                                        ? "not-allowed"
+                                        : "pointer"
                             }}
                         >
-                            Refresh Data
+                            {loading
+                                ? "Refreshing..."
+                                : "Refresh Data"}
                         </button>
 
                     </div>
-
                 </div>
             )}
 

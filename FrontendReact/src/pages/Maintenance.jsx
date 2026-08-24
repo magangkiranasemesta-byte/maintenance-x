@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Plus, X, Wrench } from "lucide-react";
+import {
+    Plus,
+    X,
+    Wrench,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown
+} from "lucide-react";
 
 const API = "http://localhost:3000";
 
@@ -17,30 +24,41 @@ function Maintenance() {
         equipment_id: "",
         engineer_id: "",
         priority: "MEDIUM",
-        description: "",
+        description: ""
     });
 
-    // =========================
+    // =====================================================
+    // SORTING
+    // =====================================================
+
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: "asc"
+    });
+
+    // =====================================================
     // GET USER LOGIN
-    // =========================
+    // =====================================================
 
     const user = JSON.parse(
-    localStorage.getItem("user") || "null"
-);
+        localStorage.getItem("user") || "null"
+    );
 
-console.log("USER LOGIN:", user);
-console.log("ROLE LOGIN:", user?.role);
+    console.log("USER LOGIN:", user);
+    console.log("ROLE LOGIN:", user?.role);
 
-const userRole = String(
-    user?.role || ""
-).trim().toLowerCase();
+    const userRole = String(
+        user?.role || ""
+    ).trim().toLowerCase();
 
-console.log("ROLE NORMALIZED:", userRole);
+    console.log(
+        "ROLE NORMALIZED:",
+        userRole
+    );
 
-
-    // =========================
+    // =====================================================
     // ALERT
-    // =========================
+    // =====================================================
 
     const showAlert = (text, type) => {
         setMessage(text);
@@ -52,10 +70,9 @@ console.log("ROLE NORMALIZED:", userRole);
         }, 3500);
     };
 
-
-    // =========================
+    // =====================================================
     // LOAD EQUIPMENT
-    // =========================
+    // =====================================================
 
     const loadEquipment = async () => {
         try {
@@ -69,7 +86,8 @@ console.log("ROLE NORMALIZED:", userRole);
                 );
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
             setEquipment(
                 Array.isArray(data)
@@ -78,7 +96,6 @@ console.log("ROLE NORMALIZED:", userRole);
             );
 
         } catch (error) {
-
             console.error(
                 "Load equipment error:",
                 error
@@ -91,15 +108,12 @@ console.log("ROLE NORMALIZED:", userRole);
         }
     };
 
-
-    // =========================
+    // =====================================================
     // LOAD MAINTENANCE
-    // =========================
+    // =====================================================
 
     const loadRequests = async () => {
-
         try {
-
             setLoading(true);
 
             const response = await fetch(
@@ -122,7 +136,6 @@ console.log("ROLE NORMALIZED:", userRole);
             );
 
         } catch (error) {
-
             console.error(
                 "Load maintenance error:",
                 error
@@ -136,36 +149,27 @@ console.log("ROLE NORMALIZED:", userRole);
             );
 
         } finally {
-
             setLoading(false);
-
         }
     };
 
-
-    // =========================
+    // =====================================================
     // INITIAL LOAD
-    // =========================
+    // =====================================================
 
     useEffect(() => {
-
         loadRequests();
 
-        // Hanya load equipment jika
-        // user boleh membuat request
         if (userRole === "engineer") {
             loadEquipment();
         }
-
     }, [userRole]);
 
-
-    // =========================
+    // =====================================================
     // HANDLE FORM
-    // =========================
+    // =====================================================
 
     const handleChange = (e) => {
-
         const {
             name,
             value
@@ -173,18 +177,15 @@ console.log("ROLE NORMALIZED:", userRole);
 
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [name]: value
         }));
     };
 
-
-    // =========================
+    // =====================================================
     // OPEN MODAL
-    // =========================
+    // =====================================================
 
     const openModal = () => {
-
-        // Pengamanan tambahan
         if (userRole !== "engineer") {
             return;
         }
@@ -194,18 +195,14 @@ console.log("ROLE NORMALIZED:", userRole);
         loadEquipment();
     };
 
-
-    // =========================
+    // =====================================================
     // SUBMIT REQUEST
-    // =========================
+    // =====================================================
 
     const handleSubmit = async (e) => {
-
         e.preventDefault();
 
-        // Pengamanan tambahan
         if (userRole !== "engineer") {
-
             showAlert(
                 "Anda tidak memiliki akses untuk membuat maintenance request.",
                 "error"
@@ -215,7 +212,6 @@ console.log("ROLE NORMALIZED:", userRole);
         }
 
         try {
-
             const body = {
                 equipment_id:
                     Number(
@@ -231,9 +227,8 @@ console.log("ROLE NORMALIZED:", userRole);
                     formData.description.trim(),
 
                 priority:
-                    formData.priority,
+                    formData.priority
             };
-
 
             const response = await fetch(
                 `${API}/api/maintenance`,
@@ -242,50 +237,41 @@ console.log("ROLE NORMALIZED:", userRole);
 
                     headers: {
                         "Content-Type":
-                            "application/json",
+                            "application/json"
                     },
 
                     body:
-                        JSON.stringify(body),
+                        JSON.stringify(body)
                 }
             );
-
 
             const result =
                 await response.json();
 
-
             if (!response.ok) {
-
                 throw new Error(
                     result.message ||
                     "Gagal membuat request"
                 );
             }
 
-
             showAlert(
                 `Maintenance request berhasil ditambahkan. ID: ${result.id}`,
                 "success"
             );
 
-
             setFormData({
                 equipment_id: "",
                 engineer_id: "",
                 priority: "MEDIUM",
-                description: "",
+                description: ""
             });
-
 
             setModalOpen(false);
 
-
             loadRequests();
 
-
         } catch (error) {
-
             console.error(
                 "Create maintenance error:",
                 error
@@ -298,13 +284,11 @@ console.log("ROLE NORMALIZED:", userRole);
         }
     };
 
-
-    // =========================
+    // =====================================================
     // FORMAT DATE
-    // =========================
+    // =====================================================
 
     const formatDate = (date) => {
-
         if (!date) {
             return "-";
         }
@@ -316,15 +300,202 @@ console.log("ROLE NORMALIZED:", userRole);
         );
     };
 
+    // =====================================================
+    // HANDLE SORT
+    // =====================================================
+
+    const handleSort = (key) => {
+        setSortConfig((prev) => ({
+            key,
+            direction:
+                prev.key === key &&
+                prev.direction === "asc"
+                    ? "desc"
+                    : "asc"
+        }));
+    };
+
+    // =====================================================
+    // GET SORT VALUE
+    // =====================================================
+
+    const getSortValue = (item, key) => {
+        switch (key) {
+
+            case "id":
+                return (
+                    Number(item.id) || 0
+                );
+
+            case "equipment":
+                return (
+                    `Equipment #${
+                        item.equipment_id || ""
+                    }`
+                ).toLowerCase();
+
+            case "engineer":
+                return (
+                    Number(
+                        item.engineer_id
+                    ) || 0
+                );
+
+            case "description":
+                return (
+                    item.description || ""
+                )
+                    .toString()
+                    .toLowerCase();
+
+            case "priority":
+                return (
+                    item.priority || ""
+                )
+                    .toString()
+                    .toLowerCase();
+
+            case "status":
+                return (
+                    item.status || ""
+                )
+                    .toString()
+                    .toLowerCase();
+
+            case "date":
+                return (
+                    new Date(
+                        item.created_at
+                    ).getTime()
+                ) || 0;
+
+            default:
+                return "";
+        }
+    };
+
+    // =====================================================
+    // SORT DATA
+    // =====================================================
+
+    const sortedRequests =
+        [...requests].sort(
+            (a, b) => {
+
+                if (!sortConfig.key) {
+                    return 0;
+                }
+
+                const valueA =
+                    getSortValue(
+                        a,
+                        sortConfig.key
+                    );
+
+                const valueB =
+                    getSortValue(
+                        b,
+                        sortConfig.key
+                    );
+
+                if (valueA < valueB) {
+                    return (
+                        sortConfig.direction ===
+                        "asc"
+                            ? -1
+                            : 1
+                    );
+                }
+
+                if (valueA > valueB) {
+                    return (
+                        sortConfig.direction ===
+                        "asc"
+                            ? 1
+                            : -1
+                    );
+                }
+
+                return 0;
+            }
+        );
+
+    // =====================================================
+    // SORT HEADER COMPONENT
+    // =====================================================
+
+    const SortableHeader = ({
+        label,
+        sortKey
+    }) => {
+
+        const active =
+            sortConfig.key === sortKey;
+
+        return (
+            <button
+                type="button"
+                className={`maintenance-sort-button ${
+                    active
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() =>
+                    handleSort(sortKey)
+                }
+            >
+
+                <span>
+                    {label}
+                </span>
+
+                {!active && (
+                    <ArrowUpDown
+                        size={14}
+                    />
+                )}
+
+                {active &&
+                    sortConfig.direction ===
+                        "asc" && (
+                        <ChevronUp
+                            size={15}
+                        />
+                    )}
+
+                {active &&
+                    sortConfig.direction ===
+                        "desc" && (
+                        <ChevronDown
+                            size={15}
+                        />
+                    )}
+
+            </button>
+        );
+    };
+
+    // =====================================================
+    // RESET SORT
+    // =====================================================
+
+    const resetSort = () => {
+        setSortConfig({
+            key: null,
+            direction: "asc"
+        });
+    };
+
+    // =====================================================
+    // RETURN
+    // =====================================================
 
     return (
-
         <div className="maintenance-page">
 
-
-            {/* =====================
+            {/* =================================================
                 HEADER
-            ====================== */}
+            ================================================= */}
 
             <header className="maintenance-page-header">
 
@@ -344,11 +515,7 @@ console.log("ROLE NORMALIZED:", userRole);
 
                 </div>
 
-
-                {/* =====================
-                    REQUEST BUTTON
-                    HANYA ENGINEER
-                ====================== */}
+                {/* REQUEST BUTTON */}
 
                 {userRole === "engineer" && (
 
@@ -368,9 +535,9 @@ console.log("ROLE NORMALIZED:", userRole);
             </header>
 
 
-            {/* =====================
+            {/* =================================================
                 ALERT
-            ====================== */}
+            ================================================= */}
 
             {message && (
 
@@ -383,9 +550,9 @@ console.log("ROLE NORMALIZED:", userRole);
             )}
 
 
-            {/* =====================
+            {/* =================================================
                 TABLE
-            ====================== */}
+            ================================================= */}
 
             <section className="maintenance-content-card">
 
@@ -398,31 +565,52 @@ console.log("ROLE NORMALIZED:", userRole);
                             <tr>
 
                                 <th>
-                                    ID
+                                    <SortableHeader
+                                        label="ID"
+                                        sortKey="id"
+                                    />
                                 </th>
 
                                 <th>
-                                    EQUIPMENT
+                                    <SortableHeader
+                                        label="EQUIPMENT"
+                                        sortKey="equipment"
+                                    />
                                 </th>
 
                                 <th>
-                                    ENGINEER
+                                    <SortableHeader
+                                        label="ENGINEER"
+                                        sortKey="engineer"
+                                    />
                                 </th>
 
                                 <th>
-                                    DESKRIPSI
+                                    <SortableHeader
+                                        label="DESKRIPSI"
+                                        sortKey="description"
+                                    />
                                 </th>
 
                                 <th>
-                                    PRIORITY
+                                    <SortableHeader
+                                        label="PRIORITY"
+                                        sortKey="priority"
+                                    />
                                 </th>
 
                                 <th>
-                                    STATUS
+                                    <SortableHeader
+                                        label="STATUS"
+                                        sortKey="status"
+                                    />
                                 </th>
 
                                 <th>
-                                    TANGGAL
+                                    <SortableHeader
+                                        label="TANGGAL"
+                                        sortKey="date"
+                                    />
                                 </th>
 
                             </tr>
@@ -460,7 +648,7 @@ console.log("ROLE NORMALIZED:", userRole);
 
                             ) : (
 
-                                requests.map(
+                                sortedRequests.map(
                                     (item) => (
 
                                         <tr
@@ -469,12 +657,16 @@ console.log("ROLE NORMALIZED:", userRole);
                                             }
                                         >
 
+                                            {/* ID */}
+
                                             <td>
                                                 {
                                                     item.id
                                                 }
                                             </td>
 
+
+                                            {/* EQUIPMENT */}
 
                                             <td>
 
@@ -505,6 +697,8 @@ console.log("ROLE NORMALIZED:", userRole);
                                             </td>
 
 
+                                            {/* ENGINEER */}
+
                                             <td>
                                                 {
                                                     item.engineer_id
@@ -512,12 +706,16 @@ console.log("ROLE NORMALIZED:", userRole);
                                             </td>
 
 
+                                            {/* DESCRIPTION */}
+
                                             <td>
                                                 {
                                                     item.description
                                                 }
                                             </td>
 
+
+                                            {/* PRIORITY */}
 
                                             <td>
 
@@ -539,6 +737,8 @@ console.log("ROLE NORMALIZED:", userRole);
                                             </td>
 
 
+                                            {/* STATUS */}
+
                                             <td>
 
                                                 <span className="maintenance-status">
@@ -551,6 +751,8 @@ console.log("ROLE NORMALIZED:", userRole);
 
                                             </td>
 
+
+                                            {/* DATE */}
 
                                             <td>
 
@@ -575,58 +777,279 @@ console.log("ROLE NORMALIZED:", userRole);
 
                 </div>
 
+                {/* =================================================
+                    SORT INFO
+                ================================================= */}
+
+                {!loading &&
+                    requests.length > 0 &&
+                    sortConfig.key && (
+
+                    <div className="maintenance-sort-footer">
+
+                        <span>
+                            Sorting:{" "}
+                            <strong>
+                                {sortConfig.key}
+                            </strong>{" "}
+                            (
+                            {sortConfig.direction ===
+                            "asc"
+                                ? "Ascending ↑"
+                                : "Descending ↓"}
+                            )
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={
+                                resetSort
+                            }
+                            className="maintenance-reset-sort"
+                        >
+                            Reset Sorting
+                        </button>
+
+                    </div>
+
+                )}
+
             </section>
 
 
-            {/* =====================
+            {/* =================================================
                 MODAL
-                HANYA ENGINEER
-            ====================== */}
+            ================================================= */}
 
             {modalOpen &&
                 userRole === "engineer" && (
 
-                    <div
-                        className="maintenance-modal"
+                <div
+                    className="maintenance-modal"
 
-                        onClick={(e) => {
+                    onClick={(e) => {
 
-                            if (
-                                e.target.className ===
-                                "maintenance-modal"
-                            ) {
+                        if (
+                            e.target.className ===
+                            "maintenance-modal"
+                        ) {
 
-                                setModalOpen(
-                                    false
-                                );
+                            setModalOpen(
+                                false
+                            );
 
+                        }
+
+                    }}
+                >
+
+                    <div className="maintenance-modal-box">
+
+                        {/* MODAL HEADER */}
+
+                        <div className="maintenance-modal-header">
+
+                            <div>
+
+                                <h2>
+                                    Request Maintenance
+                                </h2>
+
+                                <p>
+                                    Buat permintaan maintenance baru.
+                                </p>
+
+                            </div>
+
+                            <button
+                                className="maintenance-close"
+
+                                onClick={() =>
+                                    setModalOpen(
+                                        false
+                                    )
+                                }
+                            >
+
+                                <X
+                                    size={20}
+                                />
+
+                            </button>
+
+                        </div>
+
+
+                        {/* FORM */}
+
+                        <form
+                            onSubmit={
+                                handleSubmit
                             }
+                            className="maintenance-form"
+                        >
 
-                        }}
-                    >
+                            {/* EQUIPMENT */}
 
-                        <div className="maintenance-modal-box">
+                            <div className="maintenance-field">
+
+                                <label>
+                                    Equipment
+                                </label>
+
+                                <select
+                                    name="equipment_id"
+
+                                    value={
+                                        formData.equipment_id
+                                    }
+
+                                    onChange={
+                                        handleChange
+                                    }
+
+                                    required
+                                >
+
+                                    <option value="">
+                                        -- Pilih Equipment --
+                                    </option>
+
+                                    {equipment.map(
+                                        (item) => (
+
+                                            <option
+                                                key={
+                                                    item.id
+                                                }
+                                                value={
+                                                    item.id
+                                                }
+                                            >
+
+                                                {
+                                                    item.equipment_code
+                                                }
+
+                                                {" - "}
+
+                                                {
+                                                    item.name
+                                                }
+
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
 
 
-                            {/* MODAL HEADER */}
+                            {/* ENGINEER */}
 
-                            <div className="maintenance-modal-header">
+                            <div className="maintenance-field">
 
-                                <div>
+                                <label>
+                                    Engineer ID
+                                </label>
 
-                                    <h2>
-                                        Request Maintenance
-                                    </h2>
+                                <input
+                                    type="number"
 
-                                    <p>
-                                        Buat permintaan maintenance baru.
-                                    </p>
+                                    name="engineer_id"
 
-                                </div>
+                                    value={
+                                        formData.engineer_id
+                                    }
 
+                                    onChange={
+                                        handleChange
+                                    }
+
+                                    min="1"
+
+                                    required
+
+                                    placeholder="Contoh: 1"
+                                />
+
+                            </div>
+
+
+                            {/* PRIORITY */}
+
+                            <div className="maintenance-field">
+
+                                <label>
+                                    Priority
+                                </label>
+
+                                <select
+                                    name="priority"
+
+                                    value={
+                                        formData.priority
+                                    }
+
+                                    onChange={
+                                        handleChange
+                                    }
+                                >
+
+                                    <option value="LOW">
+                                        LOW
+                                    </option>
+
+                                    <option value="MEDIUM">
+                                        MEDIUM
+                                    </option>
+
+                                    <option value="HIGH">
+                                        HIGH
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            {/* DESCRIPTION */}
+
+                            <div className="maintenance-field">
+
+                                <label>
+                                    Description
+                                </label>
+
+                                <textarea
+                                    name="description"
+
+                                    value={
+                                        formData.description
+                                    }
+
+                                    onChange={
+                                        handleChange
+                                    }
+
+                                    required
+
+                                    placeholder="Jelaskan masalah equipment"
+                                />
+
+                            </div>
+
+
+                            {/* ACTION */}
+
+                            <div className="maintenance-form-actions">
 
                                 <button
-                                    className="maintenance-close"
+                                    type="button"
+
+                                    className="secondary-btn"
 
                                     onClick={() =>
                                         setModalOpen(
@@ -634,218 +1057,26 @@ console.log("ROLE NORMALIZED:", userRole);
                                         )
                                     }
                                 >
+                                    Batal
+                                </button>
 
-                                    <X
-                                        size={20}
-                                    />
+                                <button
+                                    type="submit"
 
+                                    className="primary-btn"
+                                >
+                                    Simpan Request
                                 </button>
 
                             </div>
 
-
-                            {/* FORM */}
-
-                            <form
-                                onSubmit={
-                                    handleSubmit
-                                }
-
-                                className="maintenance-form"
-                            >
-
-
-                                {/* EQUIPMENT */}
-
-                                <div className="maintenance-field">
-
-                                    <label>
-                                        Equipment
-                                    </label>
-
-                                    <select
-                                        name="equipment_id"
-
-                                        value={
-                                            formData.equipment_id
-                                        }
-
-                                        onChange={
-                                            handleChange
-                                        }
-
-                                        required
-                                    >
-
-                                        <option value="">
-                                            -- Pilih Equipment --
-                                        </option>
-
-
-                                        {equipment.map(
-                                            (item) => (
-
-                                                <option
-                                                    key={
-                                                        item.id
-                                                    }
-
-                                                    value={
-                                                        item.id
-                                                    }
-                                                >
-
-                                                    {
-                                                        item.equipment_code
-                                                    }
-
-                                                    {" - "}
-
-                                                    {
-                                                        item.name
-                                                    }
-
-                                                </option>
-
-                                            )
-                                        )}
-
-                                    </select>
-
-                                </div>
-
-
-                                {/* ENGINEER */}
-
-                                <div className="maintenance-field">
-
-                                    <label>
-                                        Engineer ID
-                                    </label>
-
-                                    <input
-                                        type="number"
-
-                                        name="engineer_id"
-
-                                        value={
-                                            formData.engineer_id
-                                        }
-
-                                        onChange={
-                                            handleChange
-                                        }
-
-                                        min="1"
-
-                                        required
-
-                                        placeholder="Contoh: 1"
-                                    />
-
-                                </div>
-
-
-                                {/* PRIORITY */}
-
-                                <div className="maintenance-field">
-
-                                    <label>
-                                        Priority
-                                    </label>
-
-                                    <select
-                                        name="priority"
-
-                                        value={
-                                            formData.priority
-                                        }
-
-                                        onChange={
-                                            handleChange
-                                        }
-                                    >
-
-                                        <option value="LOW">
-                                            LOW
-                                        </option>
-
-                                        <option value="MEDIUM">
-                                            MEDIUM
-                                        </option>
-
-                                        <option value="HIGH">
-                                            HIGH
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-
-                                {/* DESCRIPTION */}
-
-                                <div className="maintenance-field">
-
-                                    <label>
-                                        Description
-                                    </label>
-
-                                    <textarea
-                                        name="description"
-
-                                        value={
-                                            formData.description
-                                        }
-
-                                        onChange={
-                                            handleChange
-                                        }
-
-                                        required
-
-                                        placeholder="Jelaskan masalah equipment"
-                                    />
-
-                                </div>
-
-
-                                {/* ACTION */}
-
-                                <div className="maintenance-form-actions">
-
-                                    <button
-                                        type="button"
-
-                                        className="secondary-btn"
-
-                                        onClick={() =>
-                                            setModalOpen(
-                                                false
-                                            )
-                                        }
-                                    >
-                                        Batal
-                                    </button>
-
-
-                                    <button
-                                        type="submit"
-
-                                        className="primary-btn"
-                                    >
-                                        Simpan Request
-                                    </button>
-
-                                </div>
-
-                            </form>
-
-                        </div>
+                        </form>
 
                     </div>
 
-                )}
+                </div>
+
+            )}
 
         </div>
     );
