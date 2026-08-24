@@ -1,22 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
     BarChart3,
     Package,
     TrendingUp,
-    DollarSign,
     CheckCircle,
     Activity,
     AlertTriangle,
     Clock,
     Wrench,
-    XCircle
+    Bell,
+    ChevronRight
 } from "lucide-react";
+
+import {
+    useNavigate
+} from "react-router-dom";
 
 import StatCard from "./StatCard";
 
 
+const API = "http://localhost:3000";
+
+
 const ManagerDashboard = () => {
+
+    const navigate = useNavigate();
 
     // ======================================================
     // STATE
@@ -25,108 +34,253 @@ const ManagerDashboard = () => {
     const [selectedChart, setSelectedChart] =
         useState("maintenance");
 
+    const [approvalCount, setApprovalCount] =
+        useState(0);
+
+    const [approvalLoading, setApprovalLoading] =
+        useState(true);
+
+
+    // ======================================================
+    // FETCH APPROVAL
+    // ======================================================
+
+    useEffect(() => {
+
+        let isMounted = true;
+
+
+        const fetchApprovalCount = async () => {
+
+            try {
+
+                const response = await fetch(
+                    `${API}/api/maintenance`
+                );
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP Error ${response.status}`
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const requests =
+                    Array.isArray(data)
+                        ? data
+                        : Array.isArray(data.data)
+                            ? data.data
+                            : [];
+
+
+                /*
+                 * Hanya menghitung maintenance
+                 * yang menunggu approval manager
+                 */
+
+                const pendingManager =
+                    requests.filter(
+                        item =>
+                            item.status ===
+                            "PENDING_MANAGER"
+                    );
+
+
+                if (isMounted) {
+
+                    setApprovalCount(
+                        pendingManager.length
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Gagal mengambil approval manager:",
+                    error
+                );
+
+
+                /*
+                 * Jangan membuat dashboard crash
+                 * ketika API sedang tidak tersedia.
+                 */
+
+                if (isMounted) {
+
+                    setApprovalCount(0);
+
+                }
+
+            } finally {
+
+                if (isMounted) {
+
+                    setApprovalLoading(false);
+
+                }
+
+            }
+
+        };
+
+
+        /*
+         * Fetch pertama
+         */
+
+        fetchApprovalCount();
+
+
+        /*
+         * Realtime polling setiap 5 detik
+         */
+
+        const interval =
+            setInterval(
+                fetchApprovalCount,
+                5000
+            );
+
+
+        return () => {
+
+            isMounted = false;
+
+            clearInterval(interval);
+
+        };
+
+    }, []);
+
 
     // ======================================================
     // DATA
     // ======================================================
 
     const maintenanceTrend = [
+
         {
             month: "Jan",
             value: 55
         },
+
         {
             month: "Feb",
             value: 70
         },
+
         {
             month: "Mar",
             value: 48
         },
+
         {
             month: "Apr",
             value: 82
         },
+
         {
             month: "May",
             value: 92
         },
+
         {
             month: "Jun",
             value: 88
         }
+
     ];
 
 
     const maintenanceStatus = [
+
         {
             label: "Completed",
             value: 92,
             count: 92,
             className: "completed"
         },
+
         {
             label: "In Progress",
             value: 68,
             count: 68,
             className: "progress"
         },
+
         {
             label: "Pending",
             value: 24,
             count: 24,
             className: "pending"
         },
+
         {
             label: "Rejected",
             value: 8,
             count: 8,
             className: "rejected"
         }
+
     ];
 
 
     const equipmentHealth = [
+
         {
             label: "Good",
             count: 95,
             percentage: 79,
             className: "good"
         },
+
         {
             label: "Warning",
             count: 15,
             percentage: 13,
             className: "warning"
         },
+
         {
             label: "Critical",
             count: 10,
             percentage: 8,
             className: "critical"
         }
+
     ];
 
 
     const kpiPerformance = [
+
         {
             label: "Completion Rate",
             value: 92,
             target: 90,
             icon: <CheckCircle size={20} />
         },
+
         {
             label: "Equipment Uptime",
             value: 94.5,
             target: 90,
             icon: <Activity size={20} />
         },
+
         {
             label: "On-Time Maintenance",
             value: 88,
             target: 85,
             icon: <Clock size={20} />
         }
+
     ];
 
 
@@ -143,6 +297,22 @@ const ManagerDashboard = () => {
 
 
     // ======================================================
+    // GO TO APPROVAL
+    // ======================================================
+
+    const handleApprovalClick = () => {
+
+        /*
+         * Sesuaikan URL ini dengan routing aplikasi kamu.
+         */
+
+        window.location.href =
+            "/approval";
+
+    };
+
+
+    // ======================================================
     // RENDER
     // ======================================================
 
@@ -150,6 +320,95 @@ const ManagerDashboard = () => {
 
         <div className="role-dashboard">
 
+
+           {/* ==================================================
+    APPROVAL RUNNING NOTIFICATION
+================================================== */}
+
+{!approvalLoading && approvalCount > 0 && (
+
+    <div
+        className="manager-approval-marquee"
+        onClick={handleApprovalClick}
+        title="Klik untuk melihat approval"
+    >
+
+        {/* ICON */}
+
+        <div className="approval-marquee-icon">
+
+            <Bell
+                size={21}
+                strokeWidth={2.5}
+            />
+
+            <span className="approval-marquee-badge">
+
+                {approvalCount > 99
+                    ? "99+"
+                    : approvalCount}
+
+            </span>
+
+        </div>
+
+
+        {/* RUNNING TEXT */}
+
+        <div className="approval-marquee-wrapper">
+
+            <div className="approval-marquee-track">
+
+                <span>
+                    🔔 Ada{" "}
+                    <b>
+                        {approvalCount}
+                    </b>{" "}
+                    maintenance yang menunggu approval Manager
+                </span>
+
+                <span>
+                    🔔 Ada{" "}
+                    <b>
+                        {approvalCount}
+                    </b>{" "}
+                    maintenance yang menunggu approval Manager
+                </span>
+
+                <span>
+                    🔔 Klik untuk melihat dan memproses approval
+                </span>
+
+                <span>
+                    🔔 Ada{" "}
+                    <b>
+                        {approvalCount}
+                    </b>{" "}
+                    maintenance yang menunggu approval Manager
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {/* ACTION */}
+
+        <div className="approval-marquee-action">
+
+            <span>
+                Lihat Approval
+            </span>
+
+            <ChevronRight
+                size={19}
+            />
+
+        </div>
+
+    </div>
+
+)}
 
             {/* ==================================================
                 HEADER
@@ -241,21 +500,6 @@ const ManagerDashboard = () => {
                     variant="purple"
                 />
 
-
-                {/* MAINTENANCE COST
-
-                <StatCard
-                    title="Maintenance Cost"
-                    value="Rp 24.5M"
-                    subtitle="This month"
-                    icon={
-                        <DollarSign
-                            size={24}
-                        />
-                    }
-                    variant="orange"
-                /> */}
-
             </div>
 
 
@@ -319,9 +563,11 @@ const ManagerDashboard = () => {
                                 Completion Rate
                             </span>
 
+
                             <strong>
                                 92%
                             </strong>
+
 
                             <small>
                                 +4.2% from last month
@@ -351,9 +597,11 @@ const ManagerDashboard = () => {
                                 Equipment Uptime
                             </span>
 
+
                             <strong>
                                 94.5%
                             </strong>
+
 
                             <small>
                                 +2.4% from last month
@@ -383,9 +631,11 @@ const ManagerDashboard = () => {
                                 On-Time Maintenance
                             </span>
 
+
                             <strong>
                                 88%
                             </strong>
+
 
                             <small>
                                 +3.1% from last month
@@ -425,6 +675,7 @@ const ManagerDashboard = () => {
                             <h3>
                                 Maintenance Trend
                             </h3>
+
 
                             <p>
                                 Monthly maintenance activity
@@ -482,8 +733,6 @@ const ManagerDashboard = () => {
                                         }}
                                     >
 
-                                        {/* VALUE */}
-
                                         <span
                                             style={{
                                                 fontSize:
@@ -499,8 +748,6 @@ const ManagerDashboard = () => {
                                             }
                                         </span>
 
-
-                                        {/* BAR */}
 
                                         <div
                                             style={{
@@ -521,8 +768,6 @@ const ManagerDashboard = () => {
                                             }}
                                         />
 
-
-                                        {/* MONTH */}
 
                                         <span
                                             style={{
@@ -607,6 +852,7 @@ const ManagerDashboard = () => {
                             <h3>
                                 Equipment Health
                             </h3>
+
 
                             <p>
                                 Overall equipment condition
@@ -765,6 +1011,7 @@ const ManagerDashboard = () => {
                                             }}
                                         />
 
+
                                         <span
                                             style={{
                                                 color:
@@ -813,152 +1060,145 @@ const ManagerDashboard = () => {
 
 
                 {/* ==================================================
-                    MAINTENANCE STATUS
-                ================================================== */}
+    MAINTENANCE STATUS - FULL WIDTH
+================================================== */}
 
-                <div className="dashboard-card">
+<div
+    className="dashboard-card"
+    style={{
+        gridColumn: "1 / -1"
+    }}
+>
 
-                    <div className="card-header">
+    <div className="card-header">
 
-                        <div>
+        <div>
 
-                            <h3>
-                                Maintenance Status
-                            </h3>
+            <h3>
+                Maintenance Status
+            </h3>
 
-                            <p>
-                                Current maintenance distribution
-                            </p>
+            <p>
+                Current maintenance distribution
+            </p>
 
-                        </div>
+        </div>
 
 
-                        <Wrench
-                            size={20}
+        <Wrench
+            size={20}
+        />
+
+    </div>
+
+
+    {/* ==================================================
+        STATUS LIST
+    ================================================== */}
+
+    <div
+        style={{
+            marginTop: "25px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px"
+        }}
+    >
+
+        {maintenanceStatus.map(
+            (item, index) => (
+
+                <div
+                    key={index}
+                >
+
+                    {/* ==================================================
+                        LABEL + COUNT
+                    ================================================== */}
+
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "8px"
+                        }}
+                    >
+
+                        <span
+                            style={{
+                                fontSize: "14px",
+                                color: "#475569",
+                                fontWeight: "500"
+                            }}
+                        >
+                            {item.label}
+                        </span>
+
+
+                        <strong
+                            style={{
+                                fontSize: "14px",
+                                color: "#0f172a"
+                            }}
+                        >
+                            {item.count}
+                        </strong>
+
+                    </div>
+
+
+                    {/* ==================================================
+                        PROGRESS BAR
+                    ================================================== */}
+
+                    <div
+                        style={{
+                            width: "100%",
+                            height: "10px",
+                            background: "#e2e8f0",
+                            borderRadius: "20px",
+                            overflow: "hidden"
+                        }}
+                    >
+
+                        <div
+                            style={{
+                                width: `${item.value}%`,
+                                height: "100%",
+                                borderRadius: "20px",
+
+                                background:
+                                    item.className === "completed"
+                                        ? "#22c55e"
+                                        : item.className === "progress"
+                                        ? "#3b82f6"
+                                        : item.className === "pending"
+                                        ? "#f59e0b"
+                                        : "#ef4444",
+
+                                transition:
+                                    "width 0.5s ease"
+                            }}
                         />
 
                     </div>
 
-
-                    <div
-                        style={{
-                            marginTop:
-                                "25px",
-                            display:
-                                "flex",
-                            flexDirection:
-                                "column",
-                            gap:
-                                "20px"
-                        }}
-                    >
-
-                        {maintenanceStatus.map(
-                            (item, index) => (
-
-                                <div
-                                    key={index}
-                                >
-
-                                    {/* LABEL */}
-
-                                    <div
-                                        style={{
-                                            display:
-                                                "flex",
-                                            justifyContent:
-                                                "space-between",
-                                            marginBottom:
-                                                "8px"
-                                        }}
-                                    >
-
-                                        <span
-                                            style={{
-                                                fontSize:
-                                                    "14px",
-                                                color:
-                                                    "#475569",
-                                                fontWeight:
-                                                    "500"
-                                            }}
-                                        >
-                                            {
-                                                item.label
-                                            }
-                                        </span>
-
-
-                                        <strong
-                                            style={{
-                                                fontSize:
-                                                    "14px"
-                                            }}
-                                        >
-                                            {
-                                                item.count
-                                            }
-                                        </strong>
-
-                                    </div>
-
-
-                                    {/* PROGRESS */}
-
-                                    <div
-                                        style={{
-                                            width:
-                                                "100%",
-                                            height:
-                                                "10px",
-                                            background:
-                                                "#e2e8f0",
-                                            borderRadius:
-                                                "20px",
-                                            overflow:
-                                                "hidden"
-                                        }}
-                                    >
-
-                                        <div
-                                            style={{
-                                                width:
-                                                    `${item.value}%`,
-                                                height:
-                                                    "100%",
-                                                borderRadius:
-                                                    "20px",
-                                                background:
-                                                    item.className ===
-                                                    "completed"
-                                                        ? "#22c55e"
-                                                        : item.className ===
-                                                          "progress"
-                                                        ? "#3b82f6"
-                                                        : item.className ===
-                                                          "pending"
-                                                        ? "#f59e0b"
-                                                        : "#ef4444"
-                                            }}
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                            )
-                        )}
-
-                    </div>
-
                 </div>
+
+            )
+        )}
+
+    </div>
+
+</div>
 
 
                 {/* ==================================================
                     KPI PERFORMANCE CHART
                 ================================================== */}
 
-                <div className="dashboard-card">
+                {/* <div className="dashboard-card">
 
                     <div className="card-header">
 
@@ -967,6 +1207,7 @@ const ManagerDashboard = () => {
                             <h3>
                                 KPI Performance
                             </h3>
+
 
                             <p>
                                 Performance against target
@@ -1063,8 +1304,6 @@ const ManagerDashboard = () => {
                                     </div>
 
 
-                                    {/* BAR */}
-
                                     <div
                                         style={{
                                             position:
@@ -1079,8 +1318,6 @@ const ManagerDashboard = () => {
                                                 "20px"
                                         }}
                                     >
-
-                                        {/* TARGET */}
 
                                         <div
                                             style={{
@@ -1101,8 +1338,6 @@ const ManagerDashboard = () => {
                                             }}
                                         />
 
-
-                                        {/* VALUE */}
 
                                         <div
                                             style={{
@@ -1142,12 +1377,14 @@ const ManagerDashboard = () => {
                                             0%
                                         </span>
 
+
                                         <span>
                                             Target{" "}
                                             {
                                                 item.target
                                             }%
                                         </span>
+
 
                                         <span>
                                             100%
@@ -1162,7 +1399,7 @@ const ManagerDashboard = () => {
 
                     </div>
 
-                </div>
+                </div> */}
 
             </div>
 
@@ -1186,6 +1423,7 @@ const ManagerDashboard = () => {
                         <h3>
                             Management Summary
                         </h3>
+
 
                         <p>
                             Current operational overview
@@ -1402,7 +1640,9 @@ const ManagerDashboard = () => {
 
 
         </div>
+
     );
+
 };
 
 

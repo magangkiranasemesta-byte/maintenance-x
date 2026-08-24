@@ -2537,6 +2537,226 @@
     color: #9ca3af !important;
 }
 
+/* =========================================================
+   MAINTENANCE SEARCH
+========================================================= */
+
+.maintenance-search-card {
+    width: 100%;
+    padding: 18px 22px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.maintenance-search-wrapper {
+    position: relative !important;
+
+    display: block !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+
+    height: 46px !important;
+
+    box-sizing: border-box;
+}
+
+
+/* ICON SEARCH */
+
+.maintenance-search-wrapper
+.maintenance-search-icon {
+    position: absolute !important;
+
+    left: 15px !important;
+    top: 50% !important;
+
+    width: 18px !important;
+    height: 18px !important;
+
+    transform: translateY(-50%) !important;
+
+    color: #64748b !important;
+
+    pointer-events: none !important;
+
+    z-index: 2 !important;
+}
+
+
+/* INPUT */
+
+.maintenance-search-wrapper
+input.maintenance-search-input {
+    display: block !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    height: 46px !important;
+    min-height: 46px !important;
+
+    margin: 0 !important;
+
+    padding: 0 44px 0 44px !important;
+
+    box-sizing: border-box !important;
+
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+
+    outline: none !important;
+
+    background: #ffffff !important;
+
+    color: #1e293b !important;
+
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+
+    line-height: 46px !important;
+
+    appearance: none !important;
+    -webkit-appearance: none !important;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease !important;
+}
+
+
+/* PLACEHOLDER */
+
+.maintenance-search-wrapper
+input.maintenance-search-input::placeholder {
+    color: #94a3b8 !important;
+
+    opacity: 1 !important;
+}
+
+
+/* HOVER */
+
+.maintenance-search-wrapper
+input.maintenance-search-input:hover {
+    border-color: #94a3b8 !important;
+}
+
+
+/* FOCUS */
+
+.maintenance-search-wrapper
+input.maintenance-search-input:focus {
+    border-color: #2563eb !important;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.10) !important;
+
+    background: #ffffff !important;
+}
+
+
+/* CLEAR BUTTON */
+
+.maintenance-search-wrapper
+button.maintenance-search-clear {
+    position: absolute !important;
+
+    right: 9px !important;
+    top: 50% !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 30px !important;
+    height: 30px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: translateY(-50%) !important;
+
+    border: 0 !important;
+    border-radius: 7px !important;
+
+    background: transparent !important;
+
+    color: #64748b !important;
+
+    cursor: pointer !important;
+
+    z-index: 3 !important;
+}
+
+.maintenance-search-wrapper
+button.maintenance-search-clear:hover {
+    background: #f1f5f9 !important;
+
+    color: #0f172a !important;
+}
+
+
+/* SEARCH INFO */
+
+.maintenance-search-info {
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    width: 100% !important;
+
+    margin-top: 11px !important;
+
+    padding: 0 2px !important;
+
+    box-sizing: border-box !important;
+
+    color: #64748b !important;
+
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+}
+
+.maintenance-search-info span {
+    display: inline-block;
+
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+.maintenance-search-info strong {
+    color: #334155;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   SEARCH CARD MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .maintenance-search-card {
+        padding: 14px;
+    }
+
+    .maintenance-search-info {
+        flex-direction: column !important;
+
+        align-items: flex-start !important;
+
+        gap: 4px !important;
+    }
+
+}
+
 
 /* EQUIPMENT */
 
@@ -2910,6 +3130,706 @@
     background: #eff6ff;
 
     color: #2563eb;
+}
+
+/* =========================================================
+   MANAGER APPROVAL MARQUEE
+========================================================= */
+
+.manager-approval-marquee {
+    width: 100%;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 22px;
+
+    background: linear-gradient(
+        90deg,
+        #fff7ed,
+        #ffedd5,
+        #fff7ed
+    );
+
+    border: 1px solid #fed7aa;
+
+    border-left: 5px solid #f97316;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    position: relative;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+/* HOVER */
+
+.manager-approval-marquee:hover {
+    transform: translateY(-2px);
+
+    background: #ffedd5;
+
+    box-shadow:
+        0 8px 20px rgba(249, 115, 22, 0.15);
+}
+
+
+/* =========================================================
+   ICON
+========================================================= */
+
+.approval-marquee-icon {
+    width: 58px;
+    height: 100%;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+
+    color: white;
+
+    background: #f97316;
+
+    z-index: 5;
+}
+
+
+/* =========================================================
+   BADGE
+========================================================= */
+
+.approval-marquee-badge {
+    position: absolute;
+
+    top: 7px;
+    right: 7px;
+
+    min-width: 17px;
+    height: 17px;
+
+    padding: 0 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50px;
+
+    background: #dc2626;
+
+    color: white;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    border: 2px solid #f97316;
+}
+
+
+/* =========================================================
+   MARQUEE AREA
+========================================================= */
+
+.approval-marquee-wrapper {
+    flex: 1;
+
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    position: relative;
+}
+
+
+/* =========================================================
+   RUNNING TRACK
+========================================================= */
+
+.approval-marquee-track {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    width: max-content;
+
+    animation:
+        managerApprovalMarquee
+        15s
+        linear
+        infinite;
+}
+
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+.approval-marquee-track span {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    padding-right: 100px;
+
+    font-size: 14px;
+
+    color: #9a3412;
+
+    font-weight: 500;
+}
+
+
+.approval-marquee-track b {
+
+    margin: 0 4px;
+
+    color: #c2410c;
+
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   ACTION
+========================================================= */
+
+.approval-marquee-action {
+
+    height: 100%;
+
+    min-width: 150px;
+
+    padding: 0 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    flex-shrink: 0;
+
+    background: #fff7ed;
+
+    border-left: 1px solid #fed7aa;
+
+    color: #ea580c;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    z-index: 5;
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.manager-approval-marquee:hover
+.approval-marquee-action {
+
+    background: #ffedd5;
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+@keyframes managerApprovalMarquee {
+
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+
+}
+
+
+/* =========================================================
+   HOVER = PAUSE
+========================================================= */
+
+.manager-approval-marquee:hover
+.approval-marquee-track {
+
+    animation-play-state: paused;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .manager-approval-marquee {
+
+        height: 52px;
+
+    }
+
+
+    .approval-marquee-icon {
+
+        width: 50px;
+
+    }
+
+
+    .approval-marquee-action {
+
+        min-width: 50px;
+
+        padding: 0 12px;
+
+    }
+
+
+    .approval-marquee-action span {
+
+        display: none;
+
+    }
+
+
+    .approval-marquee-track span {
+
+        font-size: 13px;
+
+        padding-right: 70px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SLIDE DOWN
+========================================================= */
+
+@keyframes approvalSlideDown {
+
+    0% {
+
+        opacity: 0;
+
+        transform:
+            translateY(-18px);
+
+    }
+
+    100% {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+
+/* =========================================================
+   BELL SHAKE
+========================================================= */
+
+@keyframes bellShake {
+
+    0% {
+        transform: rotate(0deg);
+    }
+
+    10% {
+        transform: rotate(15deg);
+    }
+
+    20% {
+        transform: rotate(-15deg);
+    }
+
+    30% {
+        transform: rotate(12deg);
+    }
+
+    40% {
+        transform: rotate(-12deg);
+    }
+
+    50% {
+        transform: rotate(6deg);
+    }
+
+    60% {
+        transform: rotate(-6deg);
+    }
+
+    70%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+}
+
+
+/* =========================================================
+   BADGE PULSE
+========================================================= */
+
+@keyframes badgePulse {
+
+    0% {
+
+        transform: scale(1);
+
+        box-shadow:
+            0 0 0 0
+            rgba(
+                239,
+                68,
+                68,
+                0.55
+            );
+
+    }
+
+    70% {
+
+        transform: scale(1.08);
+
+        box-shadow:
+            0 0 0 7px
+            rgba(
+                239,
+                68,
+                68,
+                0
+            );
+
+    }
+
+    100% {
+
+        transform: scale(1);
+
+        box-shadow:
+            0 0 0 0
+            rgba(
+                239,
+                68,
+                68,
+                0
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   MOVING LIGHT
+========================================================= */
+
+@keyframes approvalLight {
+
+    0% {
+
+        left: -120%;
+
+    }
+
+    45%,
+    100% {
+
+        left: 140%;
+
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .manager-approval-notification {
+
+        align-items: flex-start;
+
+        flex-wrap: wrap;
+
+    }
+
+
+    .approval-notification-content {
+
+        flex: 1;
+
+        min-width: 200px;
+
+    }
+
+
+    .approval-notification-button {
+
+        width: calc(100% - 66px);
+
+        margin-left: 66px;
+
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .manager-approval-notification {
+
+        gap: 12px;
+
+        padding: 14px;
+
+    }
+
+
+    .approval-notification-icon {
+
+        width: 44px;
+
+        height: 44px;
+
+    }
+
+
+    .approval-notification-content strong {
+
+        font-size: 14px;
+
+    }
+
+
+    .approval-notification-content p {
+
+        font-size: 12px;
+
+    }
+
+}
+
+/* =========================================================
+   SORTABLE TABLE HEADER
+========================================================= */
+
+.history-sort-button {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: inherit;
+
+    font: inherit;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.history-sort-button:hover {
+
+    color: #2563eb;
+
+}
+
+
+/* =========================================================
+   ACTIVE SORT
+========================================================= */
+
+.history-sort-button.active {
+
+    color: #2563eb;
+
+}
+
+
+/* =========================================================
+   SORT ICON
+========================================================= */
+
+.history-sort-active {
+
+    flex-shrink: 0;
+
+    color: #2563eb;
+
+    stroke-width: 3;
+
+}
+
+
+/* =========================================================
+   DEFAULT SORT ICON
+========================================================= */
+
+.history-sort-default {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 0;
+
+    color: #94a3b8;
+
+    opacity: 0.65;
+
+    transition:
+        opacity 0.2s ease,
+        color 0.2s ease;
+
+}
+
+
+.history-sort-button:hover
+.history-sort-default {
+
+    color: #2563eb;
+
+    opacity: 1;
+
+}
+
+
+/* =========================================================
+   RESULT INFO
+========================================================= */
+
+.history-result-info {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-top: 12px;
+
+    margin-bottom: 12px;
+
+    padding: 0 2px;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+}
+
+
+.history-result-info strong {
+
+    color: #334155;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+.history-table thead th {
+
+    user-select: none;
+
+    white-space: nowrap;
+
+}
+
+
+.history-table thead th:hover {
+
+    background: #f8fafc;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .history-result-info {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 5px;
+
+    }
+
+
+    .history-sort-button {
+
+        gap: 5px;
+
+    }
+
 }
 
 /* ========================================

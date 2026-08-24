@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Plus,
     X,
     Wrench,
+    Search,
     ArrowUpDown,
     ChevronUp,
     ChevronDown
@@ -19,6 +20,16 @@ function Maintenance() {
 
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
+
+    // =====================================================
+    // SEARCH REALTIME
+    // =====================================================
+
+    const [search, setSearch] = useState("");
+
+    // =====================================================
+    // FORM DATA
+    // =====================================================
 
     const [formData, setFormData] = useState({
         equipment_id: "",
@@ -44,17 +55,15 @@ function Maintenance() {
         localStorage.getItem("user") || "null"
     );
 
-    console.log("USER LOGIN:", user);
-    console.log("ROLE LOGIN:", user?.role);
-
     const userRole = String(
         user?.role || ""
-    ).trim().toLowerCase();
+    )
+        .trim()
+        .toLowerCase();
 
-    console.log(
-        "ROLE NORMALIZED:",
-        userRole
-    );
+    console.log("USER LOGIN:", user);
+    console.log("ROLE LOGIN:", user?.role);
+    console.log("ROLE NORMALIZED:", userRole);
 
     // =====================================================
     // ALERT
@@ -86,15 +95,13 @@ function Maintenance() {
                 );
             }
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
             setEquipment(
                 Array.isArray(data)
                     ? data
                     : []
             );
-
         } catch (error) {
             console.error(
                 "Load equipment error:",
@@ -126,15 +133,13 @@ function Maintenance() {
                 );
             }
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
             setRequests(
                 Array.isArray(data)
                     ? data
                     : []
             );
-
         } catch (error) {
             console.error(
                 "Load maintenance error:",
@@ -147,7 +152,6 @@ function Maintenance() {
                 error.message,
                 "error"
             );
-
         } finally {
             setLoading(false);
         }
@@ -211,17 +215,42 @@ function Maintenance() {
             return;
         }
 
+        if (!formData.equipment_id) {
+            showAlert(
+                "Equipment wajib dipilih.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (!formData.engineer_id) {
+            showAlert(
+                "Engineer ID wajib diisi.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (!formData.description.trim()) {
+            showAlert(
+                "Description wajib diisi.",
+                "error"
+            );
+
+            return;
+        }
+
         try {
             const body = {
-                equipment_id:
-                    Number(
-                        formData.equipment_id
-                    ),
+                equipment_id: Number(
+                    formData.equipment_id
+                ),
 
-                engineer_id:
-                    Number(
-                        formData.engineer_id
-                    ),
+                engineer_id: Number(
+                    formData.engineer_id
+                ),
 
                 description:
                     formData.description.trim(),
@@ -240,23 +269,46 @@ function Maintenance() {
                             "application/json"
                     },
 
-                    body:
-                        JSON.stringify(body)
+                    body: JSON.stringify(body)
                 }
             );
 
-            const result =
-                await response.json();
+            const contentType =
+                response.headers.get(
+                    "content-type"
+                ) || "";
+
+            let result;
+
+            if (
+                contentType.includes(
+                    "application/json"
+                )
+            ) {
+                result =
+                    await response.json();
+            } else {
+                const text =
+                    await response.text();
+
+                throw new Error(
+                    text ||
+                    `Server mengembalikan response bukan JSON (${response.status})`
+                );
+            }
 
             if (!response.ok) {
                 throw new Error(
-                    result.message ||
+                    result?.message ||
+                    result?.error ||
                     "Gagal membuat request"
                 );
             }
 
             showAlert(
-                `Maintenance request berhasil ditambahkan. ID: ${result.id}`,
+                `Maintenance request berhasil ditambahkan. ID: ${
+                    result?.id || "-"
+                }`,
                 "success"
             );
 
@@ -269,8 +321,7 @@ function Maintenance() {
 
             setModalOpen(false);
 
-            loadRequests();
-
+            await loadRequests();
         } catch (error) {
             console.error(
                 "Create maintenance error:",
@@ -278,7 +329,8 @@ function Maintenance() {
             );
 
             showAlert(
-                error.message,
+                error.message ||
+                    "Gagal membuat maintenance request.",
                 "error"
             );
         }
@@ -293,9 +345,18 @@ function Maintenance() {
             return "-";
         }
 
-        return new Date(
-            date
-        ).toLocaleDateString(
+        const parsedDate =
+            new Date(date);
+
+        if (
+            Number.isNaN(
+                parsedDate.getTime()
+            )
+        ) {
+            return "-";
+        }
+
+        return parsedDate.toLocaleDateString(
             "id-ID"
         );
     };
@@ -305,62 +366,66 @@ function Maintenance() {
     // =====================================================
 
     const handleSort = (key) => {
-        setSortConfig((prev) => ({
-            key,
-            direction:
-                prev.key === key &&
-                prev.direction === "asc"
-                    ? "desc"
-                    : "asc"
-        }));
+        setSortConfig((prev) => {
+            if (prev.key === key) {
+                return {
+                    key,
+                    direction:
+                        prev.direction === "asc"
+                            ? "desc"
+                            : "asc"
+                };
+            }
+
+            return {
+                key,
+                direction: "asc"
+            };
+        });
     };
 
     // =====================================================
     // GET SORT VALUE
     // =====================================================
 
-    const getSortValue = (item, key) => {
+    const getSortValue = (
+        item,
+        key
+    ) => {
         switch (key) {
-
             case "id":
-                return (
-                    Number(item.id) || 0
-                );
+                return Number(
+                    item.id
+                ) || 0;
 
             case "equipment":
-                return (
+                return String(
+                    item.equipment_name ||
+                    item.equipment ||
                     `Equipment #${
                         item.equipment_id || ""
                     }`
                 ).toLowerCase();
 
             case "engineer":
-                return (
-                    Number(
-                        item.engineer_id
-                    ) || 0
-                );
+                return Number(
+                    item.engineer_id
+                ) || 0;
 
             case "description":
-                return (
+                return String(
                     item.description || ""
-                )
-                    .toString()
-                    .toLowerCase();
+                ).toLowerCase();
 
             case "priority":
-                return (
+                return String(
                     item.priority || ""
-                )
-                    .toString()
-                    .toLowerCase();
+                ).toLowerCase();
 
             case "status":
-                return (
+                return String(
                     item.status || ""
-                )
-                    .toString()
-                    .toLowerCase();
+                ).toLowerCase();
 
             case "date":
                 return (
@@ -375,50 +440,126 @@ function Maintenance() {
     };
 
     // =====================================================
-    // SORT DATA
+    // REALTIME SEARCH + SORTING
     // =====================================================
 
-    const sortedRequests =
-        [...requests].sort(
-            (a, b) => {
+    const filteredAndSortedRequests =
+        useMemo(() => {
+            const keyword =
+                search
+                    .trim()
+                    .toLowerCase();
 
-                if (!sortConfig.key) {
-                    return 0;
-                }
+            let result = [
+                ...requests
+            ];
 
-                const valueA =
-                    getSortValue(
-                        a,
-                        sortConfig.key
+            // =================================================
+            // REALTIME SEARCH
+            // =================================================
+
+            if (keyword !== "") {
+                result =
+                    result.filter(
+                        (item) => {
+                            const searchableValues = [
+                                item.id,
+
+                                item.equipment_id,
+
+                                item.equipment_code,
+
+                                item.equipment_name,
+
+                                item.equipment,
+
+                                item.engineer_id,
+
+                                item.engineer_name,
+
+                                item.engineer,
+
+                                item.description,
+
+                                item.priority,
+
+                                item.status,
+
+                                item.created_at
+                            ];
+
+                            const searchableText =
+                                searchableValues
+                                    .map(
+                                        (
+                                            value
+                                        ) =>
+                                            String(
+                                                value ??
+                                                    ""
+                                            ).toLowerCase()
+                                    )
+                                    .join(
+                                        " "
+                                    );
+
+                            return searchableText.includes(
+                                keyword
+                            );
+                        }
                     );
-
-                const valueB =
-                    getSortValue(
-                        b,
-                        sortConfig.key
-                    );
-
-                if (valueA < valueB) {
-                    return (
-                        sortConfig.direction ===
-                        "asc"
-                            ? -1
-                            : 1
-                    );
-                }
-
-                if (valueA > valueB) {
-                    return (
-                        sortConfig.direction ===
-                        "asc"
-                            ? 1
-                            : -1
-                    );
-                }
-
-                return 0;
             }
-        );
+
+            // =================================================
+            // SORTING
+            // =================================================
+
+            if (sortConfig.key) {
+                result.sort(
+                    (a, b) => {
+                        const valueA =
+                            getSortValue(
+                                a,
+                                sortConfig.key
+                            );
+
+                        const valueB =
+                            getSortValue(
+                                b,
+                                sortConfig.key
+                            );
+
+                        if (
+                            valueA <
+                            valueB
+                        ) {
+                            return sortConfig.direction ===
+                                "asc"
+                                ? -1
+                                : 1;
+                        }
+
+                        if (
+                            valueA >
+                            valueB
+                        ) {
+                            return sortConfig.direction ===
+                                "asc"
+                                ? 1
+                                : -1;
+                        }
+
+                        return 0;
+                    }
+                );
+            }
+
+            return result;
+        }, [
+            requests,
+            search,
+            sortConfig
+        ]);
 
     // =====================================================
     // SORT HEADER COMPONENT
@@ -428,9 +569,9 @@ function Maintenance() {
         label,
         sortKey
     }) => {
-
         const active =
-            sortConfig.key === sortKey;
+            sortConfig.key ===
+            sortKey;
 
         return (
             <button
@@ -443,8 +584,15 @@ function Maintenance() {
                 onClick={() =>
                     handleSort(sortKey)
                 }
+                title={
+                    active
+                        ? sortConfig.direction ===
+                          "asc"
+                            ? "Klik untuk Descending"
+                            : "Klik untuk Ascending"
+                        : "Klik untuk Ascending"
+                }
             >
-
                 <span>
                     {label}
                 </span>
@@ -470,7 +618,6 @@ function Maintenance() {
                             size={15}
                         />
                     )}
-
             </button>
         );
     };
@@ -484,6 +631,14 @@ function Maintenance() {
             key: null,
             direction: "asc"
         });
+    };
+
+    // =====================================================
+    // CLEAR SEARCH
+    // =====================================================
+
+    const clearSearch = () => {
+        setSearch("");
     };
 
     // =====================================================
@@ -515,25 +670,24 @@ function Maintenance() {
 
                 </div>
 
-                {/* REQUEST BUTTON */}
-
-                {userRole === "engineer" && (
+                {userRole ===
+                    "engineer" && (
 
                     <button
                         className="primary-btn"
-                        onClick={openModal}
+                        onClick={
+                            openModal
+                        }
                     >
-
-                        <Plus size={16} />
+                        <Plus
+                            size={16}
+                        />
 
                         Request Maintenance
-
                     </button>
-
                 )}
 
             </header>
-
 
             {/* =================================================
                 ALERT
@@ -549,6 +703,77 @@ function Maintenance() {
 
             )}
 
+            {/* =================================================
+                SEARCH
+            ================================================= */}
+
+            <section className="maintenance-content-card maintenance-search-card">
+
+                <div className="maintenance-search-wrapper">
+
+                    <Search
+                        size={18}
+                        className="maintenance-search-icon"
+                    />
+
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) =>
+                            setSearch(
+                                e.target.value
+                            )
+                        }
+                        placeholder="Search maintenance..."
+                        className="maintenance-search-input"
+                    />
+
+                    {search && (
+
+                        <button
+                            type="button"
+                            className="maintenance-search-clear"
+                            onClick={
+                                clearSearch
+                            }
+                            title="Clear search"
+                        >
+                            <X
+                                size={16}
+                            />
+                        </button>
+
+                    )}
+
+                </div>
+
+                <div className="maintenance-search-info">
+
+                    <span>
+                        {search
+                            ? `Menampilkan hasil pencarian untuk "${search}"`
+                            : "Search realtime aktif — ketik 1 karakter untuk memfilter."}
+                    </span>
+
+                    <span>
+                        Menampilkan{" "}
+                        <strong>
+                            {
+                                filteredAndSortedRequests.length
+                            }
+                        </strong>{" "}
+                        dari{" "}
+                        <strong>
+                            {
+                                requests.length
+                            }
+                        </strong>{" "}
+                        data
+                    </span>
+
+                </div>
+
+            </section>
 
             {/* =================================================
                 TABLE
@@ -617,7 +842,6 @@ function Maintenance() {
 
                         </thead>
 
-
                         <tbody>
 
                             {loading ? (
@@ -633,7 +857,8 @@ function Maintenance() {
 
                                 </tr>
 
-                            ) : requests.length === 0 ? (
+                            ) : requests.length ===
+                              0 ? (
 
                                 <tr>
 
@@ -646,9 +871,23 @@ function Maintenance() {
 
                                 </tr>
 
+                            ) : filteredAndSortedRequests.length ===
+                              0 ? (
+
+                                <tr>
+
+                                    <td
+                                        colSpan="7"
+                                        className="maintenance-table-message"
+                                    >
+                                        Tidak ada data yang cocok dengan pencarian "{search}".
+                                    </td>
+
+                                </tr>
+
                             ) : (
 
-                                sortedRequests.map(
+                                filteredAndSortedRequests.map(
                                     (item) => (
 
                                         <tr
@@ -664,7 +903,6 @@ function Maintenance() {
                                                     item.id
                                                 }
                                             </td>
-
 
                                             {/* EQUIPMENT */}
 
@@ -683,59 +921,65 @@ function Maintenance() {
                                                     </div>
 
                                                     <span>
-
-                                                        Equipment #
-
-                                                        {
-                                                            item.equipment_id
-                                                        }
-
+                                                        {item.equipment_name ||
+                                                        item.equipment
+                                                            ? item.equipment_name ||
+                                                              item.equipment
+                                                            : `Equipment #${
+                                                                  item.equipment_id ||
+                                                                  "-"
+                                                              }`}
                                                     </span>
 
                                                 </div>
 
-                                            </td>
+                                                {item.equipment_code && (
+                                                    <small>
+                                                        {
+                                                            item.equipment_code
+                                                        }
+                                                    </small>
+                                                )}
 
+                                            </td>
 
                                             {/* ENGINEER */}
 
                                             <td>
                                                 {
-                                                    item.engineer_id
+                                                    item.engineer_name ||
+                                                    item.engineer ||
+                                                    item.engineer_id ||
+                                                    "-"
                                                 }
                                             </td>
-
 
                                             {/* DESCRIPTION */}
 
                                             <td>
                                                 {
-                                                    item.description
+                                                    item.description ||
+                                                    "-"
                                                 }
                                             </td>
-
 
                                             {/* PRIORITY */}
 
                                             <td>
 
                                                 <span
-                                                    className={`maintenance-priority ${
-                                                        String(
-                                                            item.priority ||
+                                                    className={`maintenance-priority ${String(
+                                                        item.priority ||
                                                             ""
-                                                        ).toLowerCase()
-                                                    }`}
+                                                    ).toLowerCase()}`}
                                                 >
-
                                                     {
-                                                        item.priority
+                                                        item.priority ||
+                                                        "-"
                                                     }
-
                                                 </span>
 
                                             </td>
-
 
                                             {/* STATUS */}
 
@@ -744,13 +988,13 @@ function Maintenance() {
                                                 <span className="maintenance-status">
 
                                                     {
-                                                        item.status
+                                                        item.status ||
+                                                        "-"
                                                     }
 
                                                 </span>
 
                                             </td>
-
 
                                             {/* DATE */}
 
@@ -778,37 +1022,75 @@ function Maintenance() {
                 </div>
 
                 {/* =================================================
-                    SORT INFO
+                    FOOTER SORTING
                 ================================================= */}
 
                 {!loading &&
-                    requests.length > 0 &&
-                    sortConfig.key && (
+                    requests.length >
+                        0 && (
 
                     <div className="maintenance-sort-footer">
 
                         <span>
-                            Sorting:{" "}
-                            <strong>
-                                {sortConfig.key}
-                            </strong>{" "}
-                            (
-                            {sortConfig.direction ===
-                            "asc"
-                                ? "Ascending ↑"
-                                : "Descending ↓"}
-                            )
+
+                            {sortConfig.key ? (
+                                <>
+                                    Sorting:{" "}
+                                    <strong>
+                                        {
+                                            sortConfig.key
+                                        }
+                                    </strong>{" "}
+                                    (
+                                    {sortConfig.direction ===
+                                    "asc"
+                                        ? "Ascending ↑"
+                                        : "Descending ↓"}
+                                    )
+                                </>
+                            ) : (
+                                "Sorting belum dipilih"
+                            )}
+
                         </span>
 
-                        <button
-                            type="button"
-                            onClick={
-                                resetSort
-                            }
-                            className="maintenance-reset-sort"
+                        <div
+                            style={{
+                                display:
+                                    "flex",
+                                gap: "8px"
+                            }}
                         >
-                            Reset Sorting
-                        </button>
+
+                            {sortConfig.key && (
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        resetSort
+                                    }
+                                    className="maintenance-reset-sort"
+                                >
+                                    Reset Sorting
+                                </button>
+
+                            )}
+
+                            {search && (
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        clearSearch
+                                    }
+                                    className="maintenance-reset-sort"
+                                >
+                                    Reset Search
+                                </button>
+
+                            )}
+
+                        </div>
 
                     </div>
 
@@ -816,30 +1098,26 @@ function Maintenance() {
 
             </section>
 
-
             {/* =================================================
                 MODAL
             ================================================= */}
 
             {modalOpen &&
-                userRole === "engineer" && (
+                userRole ===
+                    "engineer" && (
 
                 <div
                     className="maintenance-modal"
 
                     onClick={(e) => {
-
                         if (
                             e.target.className ===
                             "maintenance-modal"
                         ) {
-
                             setModalOpen(
                                 false
                             );
-
                         }
-
                     }}
                 >
 
@@ -862,23 +1140,20 @@ function Maintenance() {
                             </div>
 
                             <button
+                                type="button"
                                 className="maintenance-close"
-
                                 onClick={() =>
                                     setModalOpen(
                                         false
                                     )
                                 }
                             >
-
                                 <X
                                     size={20}
                                 />
-
                             </button>
 
                         </div>
-
 
                         {/* FORM */}
 
@@ -899,15 +1174,12 @@ function Maintenance() {
 
                                 <select
                                     name="equipment_id"
-
                                     value={
                                         formData.equipment_id
                                     }
-
                                     onChange={
                                         handleChange
                                     }
-
                                     required
                                 >
 
@@ -946,7 +1218,6 @@ function Maintenance() {
 
                             </div>
 
-
                             {/* ENGINEER */}
 
                             <div className="maintenance-field">
@@ -957,26 +1228,19 @@ function Maintenance() {
 
                                 <input
                                     type="number"
-
                                     name="engineer_id"
-
                                     value={
                                         formData.engineer_id
                                     }
-
                                     onChange={
                                         handleChange
                                     }
-
                                     min="1"
-
                                     required
-
                                     placeholder="Contoh: 1"
                                 />
 
                             </div>
-
 
                             {/* PRIORITY */}
 
@@ -988,11 +1252,9 @@ function Maintenance() {
 
                                 <select
                                     name="priority"
-
                                     value={
                                         formData.priority
                                     }
-
                                     onChange={
                                         handleChange
                                     }
@@ -1014,7 +1276,6 @@ function Maintenance() {
 
                             </div>
 
-
                             {/* DESCRIPTION */}
 
                             <div className="maintenance-field">
@@ -1025,22 +1286,17 @@ function Maintenance() {
 
                                 <textarea
                                     name="description"
-
                                     value={
                                         formData.description
                                     }
-
                                     onChange={
                                         handleChange
                                     }
-
                                     required
-
                                     placeholder="Jelaskan masalah equipment"
                                 />
 
                             </div>
-
 
                             {/* ACTION */}
 
@@ -1048,9 +1304,7 @@ function Maintenance() {
 
                                 <button
                                     type="button"
-
                                     className="secondary-btn"
-
                                     onClick={() =>
                                         setModalOpen(
                                             false
@@ -1062,7 +1316,6 @@ function Maintenance() {
 
                                 <button
                                     type="submit"
-
                                     className="primary-btn"
                                 >
                                     Simpan Request
