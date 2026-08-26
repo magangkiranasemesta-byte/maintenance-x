@@ -4,7 +4,9 @@ import {
     Wrench,
     Check,
     History,
-    LogOut
+    LogOut,
+    Activity,
+    ShieldCheck
 } from "lucide-react";
 
 import {
@@ -15,54 +17,79 @@ import {
 import { rolePermissions } from "../config/permissions";
 
 
+// ======================================================
+// MENU ITEMS
+// ======================================================
+
 const menuItems = [
+
     {
         label: "Dashboard",
         icon: LayoutDashboard,
         path: "/",
         permission: "dashboard"
     },
+
     {
         label: "Equipment",
         icon: Package,
         path: "/equipment",
         permission: "equipment"
     },
+
     {
         label: "Maintenance",
         icon: Wrench,
         path: "/maintenance",
         permission: "maintenance"
     },
+
     {
         label: "Approval",
         icon: Check,
         path: "/approval",
         permission: "approval"
     },
+
     {
         label: "History",
         icon: History,
         path: "/history",
         permission: "history"
+    },
+
+    {
+        label: "Activity Log",
+        icon: Activity,
+        path: "/activity-log",
+        permission: "activityLog"
+    },
+
+    {
+        label: "Audit Trail",
+        icon: ShieldCheck,
+        path: "/audit-trail",
+        permission: "auditTrail"
     }
+
 ];
 
 
-function Sidebar() {
+// ======================================================
+// SIDEBAR
+// ======================================================
 
-    // =========================
-    // NAVIGATE
-    // =========================
+function Sidebar() {
 
     const navigate = useNavigate();
 
 
-    // =========================
-    // USER LOGIN
-    // =========================
+    // ==================================================
+    // GET USER
+    // ==================================================
 
-    const userData = localStorage.getItem("user");
+    const userData =
+        localStorage.getItem("user");
 
     let user = null;
 
@@ -82,19 +109,21 @@ function Sidebar() {
     }
 
 
-    // =========================
+    // ==================================================
     // ROLE
-    // =========================
+    // ==================================================
 
-    const role = user?.role?.toLowerCase();
+    const role =
+        user?.role?.toLowerCase();
+
 
     const permissions =
-        rolePermissions[role];
+        rolePermissions?.[role] || {};
 
 
-    // =========================
+    // ==================================================
     // LOGOUT
-    // =========================
+    // ==================================================
 
     const handleLogout = () => {
 
@@ -102,20 +131,28 @@ function Sidebar() {
 
         localStorage.removeItem("user");
 
-        navigate("/login", {
-            replace: true
-        });
+        navigate(
+            "/login",
+            {
+                replace: true
+            }
+        );
 
     };
 
+
+    // ==================================================
+    // RENDER
+    // ==================================================
 
     return (
 
         <aside className="sidebar">
 
-            {/* =========================
+
+            {/* ==================================================
                 BRAND
-            ========================= */}
+            ================================================== */}
 
             <div className="brand">
 
@@ -138,9 +175,9 @@ function Sidebar() {
             </div>
 
 
-            {/* =========================
+            {/* ==================================================
                 MENU
-            ========================= */}
+            ================================================== */}
 
             <nav className="navigation">
 
@@ -150,20 +187,27 @@ function Sidebar() {
 
 
                 {menuItems
+
                     .filter(
                         item =>
-                            permissions?.[item.permission]
+                            permissions[
+                                item.permission
+                            ] === true
                     )
+
                     .map((item) => {
 
-                        const Icon = item.icon;
+                        const Icon =
+                            item.icon;
 
                         return (
 
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                className={({ isActive }) =>
+                                className={({
+                                    isActive
+                                }) =>
                                     `nav-item ${
                                         isActive
                                             ? "active"
@@ -172,11 +216,19 @@ function Sidebar() {
                                 }
                             >
 
+                                {/* ICON */}
+
                                 <span className="nav-icon">
 
-                                    <Icon size={16} />
+                                    <Icon
+                                        size={16}
+                                        strokeWidth={2}
+                                    />
 
                                 </span>
+
+
+                                {/* LABEL */}
 
                                 <span>
                                     {item.label}
@@ -191,9 +243,9 @@ function Sidebar() {
             </nav>
 
 
-            {/* =========================
+            {/* ==================================================
                 FOOTER
-            ========================= */}
+            ================================================== */}
 
             <div className="sidebar-footer">
 
@@ -203,7 +255,9 @@ function Sidebar() {
                     onClick={handleLogout}
                 >
 
-                    <LogOut size={15} />
+                    <LogOut
+                        size={15}
+                    />
 
                     <span>
                         Logout

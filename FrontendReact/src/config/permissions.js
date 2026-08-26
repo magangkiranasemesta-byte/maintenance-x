@@ -5,7 +5,9 @@ export const rolePermissions = {
         equipment: false,
         maintenance: true,
         approval: false,
-        history: true
+        history: true,
+        activityLog: true,
+        auditTrail: true
     },
 
     engineer: {
@@ -13,7 +15,9 @@ export const rolePermissions = {
         equipment: true,
         maintenance: true,
         approval: false,
-        history: true
+        history: true,
+        activityLog: false,
+        auditTrail: false
     },
 
     supervisor: {
@@ -21,15 +25,19 @@ export const rolePermissions = {
         equipment: true,
         maintenance: true,
         approval: true,
-        history: true
+        history: true,
+        activityLog: true,
+        auditTrail: true
     },
 
     manager: {
-    dashboard: true,
-    equipment: false,
-    maintenance: false,
-    approval: true,
-    history: true
+        dashboard: true,
+        equipment: false,
+        maintenance: false,
+        approval: true,
+        history: true,
+        activityLog: true,
+        auditTrail: true
     }
 
 };

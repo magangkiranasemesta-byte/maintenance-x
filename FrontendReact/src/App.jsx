@@ -16,31 +16,38 @@ import Equipment from "./pages/Equipment";
 import Maintenance from "./pages/Maintenance";
 import Approval from "./pages/Approval";
 import History from "./pages/History";
+import ActivityLog from "./pages/ActivityLog";
+import AuditTrail from "./pages/AuditTrail";
 
 
-// =========================
+// ======================================================
 // LAYOUT SETELAH LOGIN
-// =========================
+// ======================================================
 
 function MainLayout() {
 
     return (
+
         <div className="app-layout">
 
             <Sidebar />
 
             <main className="main-content">
+
                 <Outlet />
+
             </main>
 
         </div>
+
     );
+
 }
 
 
-// =========================
+// ======================================================
 // APP
-// =========================
+// ======================================================
 
 function App() {
 
@@ -50,24 +57,33 @@ function App() {
 
             <Routes>
 
-                {/* =====================
+                {/* ==================================================
                     LOGIN
-                ===================== */}
+                ================================================== */}
 
                 <Route
                     path="/login"
-                    element={<Login />}
+                    element={
+                        <Login />
+                    }
                 />
+
+
+                {/* ==================================================
+                    REGISTER
+                ================================================== */}
 
                 <Route
                     path="/register"
-                    element={<Register />}
+                    element={
+                        <Register />
+                    }
                 />
 
 
-                {/* =====================
+                {/* ==================================================
                     HALAMAN YANG DILINDUNGI
-                ===================== */}
+                ================================================== */}
 
                 <Route
                     element={
@@ -77,71 +93,113 @@ function App() {
                     }
                 >
 
-                    {/* =====================
+                    {/* ==================================================
                         DASHBOARD
-                    ===================== */}
+                    ================================================== */}
 
                     <Route
                         path="/"
                         element={
-                            <RoleRoute permission="dashboard">
+                            <RoleRoute
+                                permission="dashboard"
+                            >
                                 <Dashboard />
                             </RoleRoute>
                         }
                     />
 
 
-                    {/* =====================
+                    {/* ==================================================
                         EQUIPMENT
-                    ===================== */}
+                    ================================================== */}
 
                     <Route
                         path="/equipment"
                         element={
-                            <RoleRoute permission="equipment">
+                            <RoleRoute
+                                permission="equipment"
+                            >
                                 <Equipment />
                             </RoleRoute>
                         }
                     />
 
 
-                    {/* =====================
+                    {/* ==================================================
                         MAINTENANCE
-                    ===================== */}
+                    ================================================== */}
 
                     <Route
                         path="/maintenance"
                         element={
-                            <RoleRoute permission="maintenance">
+                            <RoleRoute
+                                permission="maintenance"
+                            >
                                 <Maintenance />
                             </RoleRoute>
                         }
                     />
 
 
-                    {/* =====================
+                    {/* ==================================================
                         APPROVAL
-                    ===================== */}
+                    ================================================== */}
 
                     <Route
                         path="/approval"
                         element={
-                            <RoleRoute permission="approval">
+                            <RoleRoute
+                                permission="approval"
+                            >
                                 <Approval />
                             </RoleRoute>
                         }
                     />
 
 
-                    {/* =====================
+                    {/* ==================================================
                         HISTORY
-                    ===================== */}
+                    ================================================== */}
 
                     <Route
                         path="/history"
                         element={
-                            <RoleRoute permission="history">
+                            <RoleRoute
+                                permission="history"
+                            >
                                 <History />
+                            </RoleRoute>
+                        }
+                    />
+
+
+                    {/* ==================================================
+                        ACTIVITY LOG
+                    ================================================== */}
+
+                    <Route
+                        path="/activity-log"
+                        element={
+                            <RoleRoute
+                                permission="activityLog"
+                            >
+                                <ActivityLog />
+                            </RoleRoute>
+                        }
+                    />
+
+
+                    {/* ==================================================
+                        AUDIT TRAIL
+                    ================================================== */}
+
+                    <Route
+                        path="/audit-trail"
+                        element={
+                            <RoleRoute
+                                permission="auditTrail"
+                            >
+                                <AuditTrail />
                             </RoleRoute>
                         }
                     />
@@ -149,18 +207,21 @@ function App() {
                 </Route>
 
 
-                {/* =====================
+                {/* ==================================================
                     UNAUTHORIZED
-                ===================== */}
+                ================================================== */}
 
                 <Route
                     path="/unauthorized"
                     element={
+
                         <div className="unauthorized-page">
 
                             <div className="unauthorized-card">
 
-                                <h1>403</h1>
+                                <h1>
+                                    403
+                                </h1>
 
                                 <h2>
                                     Access Denied
@@ -182,6 +243,7 @@ function App() {
                             </div>
 
                         </div>
+
                     }
                 />
 
@@ -190,6 +252,8 @@ function App() {
         </BrowserRouter>
 
     );
+
 }
+
 
 export default App;

@@ -4,6 +4,11 @@ const router = express.Router();
 
 const db = require("../db");
 
+const {
+    logActivity,
+    logAudit
+} = require("../utils/logger");
+
 
 // ======================================================
 // STATUS DATABASE
@@ -42,6 +47,7 @@ router.get("/", (req, res) => {
                     err
                 );
 
+
                 return res.status(500).json({
 
                     success: false,
@@ -55,6 +61,60 @@ router.get("/", (req, res) => {
                 });
 
             }
+
+            logActivity({
+
+                req,
+
+                userId: engineer_id,
+
+                action: "CREATE",
+
+                module: "Maintenance",
+
+                description:
+                    `Maintenance #${result.insertId} dibuat dengan status PENDING_SUPERVISOR`
+
+            });
+
+             // ==================================================
+        // AUDIT LOG
+        // ==================================================
+
+        logAudit({
+
+            req,
+
+            userId: engineer_id,
+
+            module: "Maintenance",
+
+            recordId: result.insertId,
+
+            action: "CREATE",
+
+            oldData: null,
+
+            newData: {
+
+                status:
+                    "PENDING_SUPERVISOR",
+
+                equipment_id,
+
+                engineer_id,
+
+                description,
+
+                priority:
+                    priority || "MEDIUM"
+
+            },
+
+            description:
+                `Maintenance #${result.insertId} dibuat`
+
+        });
 
             return res.json(results);
 
@@ -755,6 +815,122 @@ router.put("/:id/status", (req, res) => {
                                 "Maintenance request tidak ditemukan"
 
                         });
+
+                        // ======================================================
+// ACTIVITY LOG
+// ======================================================
+
+let activityAction = "STATUS_CHANGE";
+
+
+// Supervisor approve
+
+if (
+    currentStatus === "PENDING_SUPERVISOR" &&
+    status === "PENDING_MANAGER"
+) {
+
+    activityAction = "APPROVE";
+
+}
+
+
+// Manager approve
+
+else if (
+    currentStatus === "PENDING_MANAGER" &&
+    status === "APPROVED"
+) {
+
+    activityAction = "APPROVE";
+
+}
+
+
+// Reject
+
+else if (
+    status === "REJECTED"
+) {
+
+    activityAction = "REJECT";
+
+}
+
+
+// Start maintenance
+
+else if (
+    status === "IN_PROGRESS"
+) {
+
+    activityAction = "START";
+
+}
+
+
+// Complete maintenance
+
+else if (
+    status === "COMPLETED"
+) {
+
+    activityAction = "COMPLETE";
+
+}
+
+
+logActivity({
+
+    req,
+
+    action:
+        activityAction,
+
+    module:
+        "Maintenance",
+
+    description:
+        `Maintenance #${id}: ${currentStatus} → ${status}`
+
+});
+
+
+// ======================================================
+// AUDIT LOG
+// ======================================================
+
+logAudit({
+
+    req,
+
+    module:
+        "Maintenance",
+
+    recordId:
+        Number(id),
+
+    action:
+        "STATUS_CHANGE",
+
+    oldData: {
+
+        status:
+            currentStatus
+
+    },
+
+    newData: {
+
+        status:
+            status
+
+    },
+
+    description:
+        `Status maintenance #${id} berubah dari ${currentStatus} menjadi ${status}`
+
+});
 
                     }
 
