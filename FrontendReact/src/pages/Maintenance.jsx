@@ -6,7 +6,9 @@ import {
     Search,
     ArrowUpDown,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
 const API = "http://localhost:3000";
@@ -26,6 +28,15 @@ function Maintenance() {
     // =====================================================
 
     const [search, setSearch] = useState("");
+
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Jumlah data per halaman
+    const itemsPerPage = 10;
 
     // =====================================================
     // FORM DATA
@@ -293,15 +304,15 @@ function Maintenance() {
 
                 throw new Error(
                     text ||
-                    `Server mengembalikan response bukan JSON (${response.status})`
+                        `Server mengembalikan response bukan JSON (${response.status})`
                 );
             }
 
             if (!response.ok) {
                 throw new Error(
                     result?.message ||
-                    result?.error ||
-                    "Gagal membuat request"
+                        result?.error ||
+                        "Gagal membuat request"
                 );
             }
 
@@ -320,6 +331,9 @@ function Maintenance() {
             });
 
             setModalOpen(false);
+
+            // Kembali ke halaman pertama
+            setCurrentPage(1);
 
             await loadRequests();
         } catch (error) {
@@ -401,10 +415,10 @@ function Maintenance() {
             case "equipment":
                 return String(
                     item.equipment_name ||
-                    item.equipment ||
-                    `Equipment #${
-                        item.equipment_id || ""
-                    }`
+                        item.equipment ||
+                        `Equipment #${
+                            item.equipment_id || ""
+                        }`
                 ).toLowerCase();
 
             case "engineer":
@@ -562,6 +576,67 @@ function Maintenance() {
         ]);
 
     // =====================================================
+    // PAGINATION
+    // =====================================================
+
+    const totalItems =
+        filteredAndSortedRequests.length;
+
+    const totalPages =
+        Math.ceil(
+            totalItems /
+                itemsPerPage
+        );
+
+    const paginatedRequests =
+        useMemo(() => {
+            const startIndex =
+                (currentPage - 1) *
+                itemsPerPage;
+
+            const endIndex =
+                startIndex +
+                itemsPerPage;
+
+            return filteredAndSortedRequests.slice(
+                startIndex,
+                endIndex
+            );
+        }, [
+            filteredAndSortedRequests,
+            currentPage
+        ]);
+
+    // =====================================================
+    // RESET PAGE WHEN SEARCH / SORT CHANGES
+    // =====================================================
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [
+        search,
+        sortConfig
+    ]);
+
+    // =====================================================
+    // PREVENT INVALID CURRENT PAGE
+    // =====================================================
+
+    useEffect(() => {
+        if (
+            totalPages > 0 &&
+            currentPage > totalPages
+        ) {
+            setCurrentPage(
+                totalPages
+            );
+        }
+    }, [
+        currentPage,
+        totalPages
+    ]);
+
+    // =====================================================
     // SORT HEADER COMPONENT
     // =====================================================
 
@@ -639,6 +714,28 @@ function Maintenance() {
 
     const clearSearch = () => {
         setSearch("");
+        setCurrentPage(1);
+    };
+
+    // =====================================================
+    // PAGINATION HANDLER
+    // =====================================================
+
+    const goToPage = (page) => {
+        if (
+            page < 1 ||
+            page > totalPages
+        ) {
+            return;
+        }
+
+        setCurrentPage(page);
+
+        // Scroll ke atas table
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
     };
 
     // =====================================================
@@ -887,7 +984,7 @@ function Maintenance() {
 
                             ) : (
 
-                                filteredAndSortedRequests.map(
+                                paginatedRequests.map(
                                     (item) => (
 
                                         <tr
@@ -1022,77 +1119,231 @@ function Maintenance() {
                 </div>
 
                 {/* =================================================
-                    FOOTER SORTING
+                    FOOTER
                 ================================================= */}
 
                 {!loading &&
                     requests.length >
                         0 && (
 
-                    <div className="maintenance-sort-footer">
+                    <>
 
-                        <span>
+                        {/* SORTING FOOTER */}
 
-                            {sortConfig.key ? (
-                                <>
-                                    Sorting:{" "}
+                        <div className="maintenance-sort-footer">
+
+                            <div className="maintenance-footer-info">
+
+                                <span>
+
+                                    {sortConfig.key ? (
+                                        <>
+                                            Sorting:{" "}
+                                            <strong>
+                                                {
+                                                    sortConfig.key
+                                                }
+                                            </strong>{" "}
+                                            (
+                                            {sortConfig.direction ===
+                                            "asc"
+                                                ? "Ascending ↑"
+                                                : "Descending ↓"}
+                                            )
+                                        </>
+                                    ) : (
+                                        "Sorting belum dipilih"
+                                    )}
+
+                                </span>
+
+                                <span>
+
+                                    Menampilkan{" "}
+
+                                    <strong>
+                                        {totalItems ===
+                                        0
+                                            ? 0
+                                            : (currentPage -
+                                                  1) *
+                                                  itemsPerPage +
+                                              1}
+                                    </strong>
+
+                                    {" - "}
+
+                                    <strong>
+                                        {Math.min(
+                                            currentPage *
+                                                itemsPerPage,
+                                            totalItems
+                                        )}
+                                    </strong>
+
+                                    {" dari "}
+
                                     <strong>
                                         {
-                                            sortConfig.key
+                                            totalItems
                                         }
-                                    </strong>{" "}
-                                    (
-                                    {sortConfig.direction ===
-                                    "asc"
-                                        ? "Ascending ↑"
-                                        : "Descending ↓"}
-                                    )
-                                </>
-                            ) : (
-                                "Sorting belum dipilih"
-                            )}
+                                    </strong>
 
-                        </span>
+                                    {" data"}
 
-                        <div
-                            style={{
-                                display:
-                                    "flex",
-                                gap: "8px"
-                            }}
-                        >
+                                </span>
 
-                            {sortConfig.key && (
+                            </div>
 
-                                <button
-                                    type="button"
-                                    onClick={
-                                        resetSort
-                                    }
-                                    className="maintenance-reset-sort"
-                                >
-                                    Reset Sorting
-                                </button>
+                            <div
+                                style={{
+                                    display:
+                                        "flex",
+                                    gap: "8px",
+                                    alignItems:
+                                        "center"
+                                }}
+                            >
 
-                            )}
+                                {sortConfig.key && (
 
-                            {search && (
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            resetSort
+                                        }
+                                        className="maintenance-reset-sort"
+                                    >
+                                        Reset Sorting
+                                    </button>
 
-                                <button
-                                    type="button"
-                                    onClick={
-                                        clearSearch
-                                    }
-                                    className="maintenance-reset-sort"
-                                >
-                                    Reset Search
-                                </button>
+                                )}
 
-                            )}
+                                {search && (
+
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            clearSearch
+                                        }
+                                        className="maintenance-reset-sort"
+                                    >
+                                        Reset Search
+                                    </button>
+
+                                )}
+
+                            </div>
 
                         </div>
 
-                    </div>
+                        {/* PAGINATION */}
+
+                        {totalPages > 1 && (
+
+                            <div className="maintenance-pagination">
+
+                                {/* PREVIOUS */}
+
+                                <button
+                                    type="button"
+                                    className="maintenance-pagination-btn"
+                                    disabled={
+                                        currentPage ===
+                                        1
+                                    }
+                                    onClick={() =>
+                                        goToPage(
+                                            currentPage -
+                                                1
+                                        )
+                                    }
+                                >
+
+                                    <ChevronLeft
+                                        size={16}
+                                    />
+
+                                    Previous
+
+                                </button>
+
+                                {/* PAGE NUMBERS */}
+
+                                <div className="maintenance-page-numbers">
+
+                                    {Array.from(
+                                        {
+                                            length: totalPages
+                                        },
+                                        (
+                                            _,
+                                            index
+                                        ) => {
+                                            const page =
+                                                index +
+                                                1;
+
+                                            return (
+                                                <button
+                                                    key={
+                                                        page
+                                                    }
+                                                    type="button"
+                                                    className={`maintenance-page-number ${
+                                                        currentPage ===
+                                                        page
+                                                            ? "active"
+                                                            : ""
+                                                    }`}
+                                                    onClick={() =>
+                                                        goToPage(
+                                                            page
+                                                        )
+                                                    }
+                                                >
+                                                    {
+                                                        page
+                                                    }
+                                                </button>
+                                            );
+                                        }
+                                    )}
+
+                                </div>
+
+                                {/* NEXT */}
+
+                                <button
+                                    type="button"
+                                    className="maintenance-pagination-btn"
+                                    disabled={
+                                        currentPage ===
+                                            totalPages ||
+                                        totalPages ===
+                                            0
+                                    }
+                                    onClick={() =>
+                                        goToPage(
+                                            currentPage +
+                                                1
+                                        )
+                                    }
+                                >
+
+                                    Next
+
+                                    <ChevronRight
+                                        size={16}
+                                    />
+
+                                </button>
+
+                            </div>
+
+                        )}
+
+                    </>
 
                 )}
 

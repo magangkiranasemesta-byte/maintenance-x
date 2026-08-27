@@ -1232,6 +1232,275 @@
     line-height: 1;
 }
 
+/* =====================================================
+   HISTORY PAGINATION
+===================================================== */
+
+.history-pagination {
+    width: 100%;
+    min-height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 14px 20px;
+    box-sizing: border-box;
+
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+
+/* =====================================================
+   PAGINATION INFO
+===================================================== */
+
+.history-pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    margin-right: 16px;
+}
+
+.history-pagination-info strong {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+
+/* =====================================================
+   PAGINATION CONTROLS
+===================================================== */
+
+.history-pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+
+/* =====================================================
+   PAGE NUMBERS
+===================================================== */
+
+.history-page-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+.history-pagination-btn,
+.history-page-number {
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 7px;
+
+    background: #ffffff;
+    color: #475569;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+
+/* =====================================================
+   PREVIOUS / NEXT
+===================================================== */
+
+.history-pagination-btn {
+    gap: 5px;
+    padding: 0 11px;
+}
+
+
+/* =====================================================
+   NUMBER
+===================================================== */
+
+.history-page-number {
+    width: 34px;
+    padding: 0;
+}
+
+
+/* =====================================================
+   HOVER
+===================================================== */
+
+.history-pagination-btn:hover:not(:disabled),
+.history-page-number:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+
+/* =====================================================
+   ACTIVE PAGE
+===================================================== */
+
+.history-page-number.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+
+/* =====================================================
+   DISABLED
+===================================================== */
+
+.history-pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 768px) {
+    .history-pagination {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .history-pagination-info {
+        margin-right: 0;
+    }
+
+    .history-pagination-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* =====================================================
+   PAGINATION
+===================================================== */
+
+.maintenance-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.maintenance-page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.maintenance-pagination-btn,
+.maintenance-page-number {
+    height: 36px;
+    min-width: 36px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+
+    border-radius: 7px;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.maintenance-pagination-btn {
+    padding: 0 12px;
+    gap: 5px;
+}
+
+.maintenance-pagination-btn:hover:not(:disabled),
+.maintenance-page-number:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.maintenance-page-number.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.maintenance-pagination-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* =====================================================
+   FOOTER INFO
+===================================================== */
+
+.maintenance-footer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.maintenance-footer-info span {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.maintenance-footer-info strong {
+    color: #1e293b;
+}
+
+/* =====================================================
+   RESPONSIVE PAGINATION
+===================================================== */
+
+@media (max-width: 768px) {
+
+    .maintenance-pagination {
+        flex-wrap: wrap;
+    }
+
+    .maintenance-page-numbers {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .maintenance-sort-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+}
+
 
 /* =========================
    CONTENT CARD

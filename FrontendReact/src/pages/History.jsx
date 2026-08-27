@@ -9,7 +9,9 @@ import {
     Search,
     X,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
 
@@ -45,6 +47,16 @@ function History() {
 
 
     // =====================================================
+    // PAGINATION STATE
+    // =====================================================
+
+    const [currentPage, setCurrentPage] =
+        useState(1);
+
+    const itemsPerPage = 10;
+
+
+    // =====================================================
     // LOAD HISTORY
     // =====================================================
 
@@ -68,7 +80,11 @@ function History() {
                 ) || "";
 
 
-            if (!contentType.includes("application/json")) {
+            if (
+                !contentType.includes(
+                    "application/json"
+                )
+            ) {
 
                 const text =
                     await response.text();
@@ -321,7 +337,7 @@ function History() {
 
 
     // =====================================================
-    // SORT FUNCTION
+    // SORT VALUE
     // =====================================================
 
     const getSortValue = (
@@ -473,6 +489,86 @@ function History() {
 
 
     // =====================================================
+    // PAGINATION CALCULATION
+    // =====================================================
+
+    const totalItems =
+        sortedHistory.length;
+
+
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                totalItems /
+                itemsPerPage
+            )
+        );
+
+
+    const startIndex =
+        (currentPage - 1) *
+        itemsPerPage;
+
+
+    const endIndex =
+        startIndex +
+        itemsPerPage;
+
+
+    /*
+     * INI DATA YANG BENAR-BENAR
+     * AKAN DITAMPILKAN DI TABLE
+     */
+
+    const paginatedHistory =
+        sortedHistory.slice(
+            startIndex,
+            endIndex
+        );
+
+
+    // =====================================================
+    // RESET PAGINATION
+    // KETIKA SEARCH / SORT BERUBAH
+    // =====================================================
+
+    useEffect(() => {
+
+        setCurrentPage(1);
+
+    }, [
+        search,
+        sortConfig.key,
+        sortConfig.direction
+    ]);
+
+
+    // =====================================================
+    // JIKA DATA BERKURANG
+    // DAN CURRENT PAGE SUDAH TIDAK ADA
+    // =====================================================
+
+    useEffect(() => {
+
+        if (
+            currentPage >
+            totalPages
+        ) {
+
+            setCurrentPage(
+                totalPages
+            );
+
+        }
+
+    }, [
+        currentPage,
+        totalPages
+    ]);
+
+
+    // =====================================================
     // HANDLE SORT
     // =====================================================
 
@@ -520,6 +616,53 @@ function History() {
 
 
     // =====================================================
+    // PREVIOUS PAGE
+    // =====================================================
+
+    const handlePreviousPage = () => {
+
+        setCurrentPage(
+            (previousPage) =>
+                Math.max(
+                    previousPage - 1,
+                    1
+                )
+        );
+
+    };
+
+
+    // =====================================================
+    // NEXT PAGE
+    // =====================================================
+
+    const handleNextPage = () => {
+
+        setCurrentPage(
+            (previousPage) =>
+                Math.min(
+                    previousPage + 1,
+                    totalPages
+                )
+        );
+
+    };
+
+
+    // =====================================================
+    // GO TO PAGE
+    // =====================================================
+
+    const handlePageChange = (
+        page
+    ) => {
+
+        setCurrentPage(page);
+
+    };
+
+
+    // =====================================================
     // SORT ICON
     // =====================================================
 
@@ -531,6 +674,7 @@ function History() {
 
             return (
                 <span className="history-sort-default">
+
                     <ArrowUp
                         size={13}
                     />
@@ -538,6 +682,7 @@ function History() {
                     <ArrowDown
                         size={13}
                     />
+
                 </span>
             );
 
@@ -753,7 +898,7 @@ function History() {
 
                 {!loading &&
                     !error &&
-                    history.length > 0 && (
+                    sortedHistory.length > 0 && (
 
                         <div className="history-result-info">
 
@@ -762,20 +907,25 @@ function History() {
                                 Menampilkan{" "}
 
                                 <strong>
-                                    {
-                                        sortedHistory.length
-                                    }
-                                </strong>{" "}
+                                    {startIndex + 1}
+                                </strong>
 
-                                dari{" "}
+                                {" - "}
 
                                 <strong>
-                                    {
-                                        history.length
-                                    }
-                                </strong>{" "}
+                                    {Math.min(
+                                        endIndex,
+                                        totalItems
+                                    )}
+                                </strong>
 
-                                data
+                                {" dari "}
+
+                                <strong>
+                                    {history.length}
+                                </strong>
+
+                                {" data"}
 
                             </span>
 
@@ -901,225 +1051,373 @@ function History() {
                         TABLE
                     ===================================================== */
 
-                    <div className="history-table-wrapper">
+                    <>
 
-                        <table className="history-table">
+                        <div className="history-table-wrapper">
 
-                            <thead>
+                            <table className="history-table">
 
-                                <tr>
+                                <thead>
 
-                                    {/* ID */}
+                                    <tr>
 
-                                    <SortableHeader
-                                        label="ID"
-                                        sortKey="maintenance_id"
-                                    />
+                                        {/* ID */}
 
-
-                                    {/* EQUIPMENT */}
-
-                                    <SortableHeader
-                                        label="EQUIPMENT"
-                                        sortKey="equipment_name"
-                                    />
+                                        <SortableHeader
+                                            label="ID"
+                                            sortKey="maintenance_id"
+                                        />
 
 
-                                    {/* ENGINEER */}
+                                        {/* EQUIPMENT */}
 
-                                    <SortableHeader
-                                        label="ENGINEER"
-                                        sortKey="engineer_name"
-                                    />
-
-
-                                    {/* DESCRIPTION */}
-
-                                    <SortableHeader
-                                        label="DESCRIPTION"
-                                        sortKey="description"
-                                    />
+                                        <SortableHeader
+                                            label="EQUIPMENT"
+                                            sortKey="equipment_name"
+                                        />
 
 
-                                    {/* PRIORITY */}
+                                        {/* ENGINEER */}
 
-                                    <SortableHeader
-                                        label="PRIORITY"
-                                        sortKey="priority"
-                                    />
-
-
-                                    {/* STATUS */}
-
-                                    <SortableHeader
-                                        label="STATUS"
-                                        sortKey="status"
-                                    />
+                                        <SortableHeader
+                                            label="ENGINEER"
+                                            sortKey="engineer_name"
+                                        />
 
 
-                                    {/* DATE */}
+                                        {/* DESCRIPTION */}
 
-                                    <SortableHeader
-                                        label="TANGGAL"
-                                        sortKey="created_at"
-                                    />
-
-                                </tr>
-
-                            </thead>
+                                        <SortableHeader
+                                            label="DESCRIPTION"
+                                            sortKey="description"
+                                        />
 
 
-                            <tbody>
+                                        {/* PRIORITY */}
 
-                                {sortedHistory.map(
-                                    (item) => (
+                                        <SortableHeader
+                                            label="PRIORITY"
+                                            sortKey="priority"
+                                        />
 
-                                        <tr
-                                            key={
-                                                item.maintenance_id
-                                            }
-                                        >
 
-                                            {/* =====================================================
-                                                ID
-                                            ===================================================== */}
+                                        {/* STATUS */}
 
-                                            <td>
+                                        <SortableHeader
+                                            label="STATUS"
+                                            sortKey="status"
+                                        />
 
-                                                {
+
+                                        {/* DATE */}
+
+                                        <SortableHeader
+                                            label="TANGGAL"
+                                            sortKey="created_at"
+                                        />
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody>
+
+                                    {/* =====================================================
+                                        PENTING:
+                                        SEBELUMNYA:
+
+                                        sortedHistory.map()
+
+                                        SEKARANG:
+
+                                        paginatedHistory.map()
+
+                                        Jadi hanya 10 data per halaman.
+                                    ===================================================== */}
+
+                                    {paginatedHistory.map(
+                                        (item) => (
+
+                                            <tr
+                                                key={
                                                     item.maintenance_id
                                                 }
+                                            >
 
-                                            </td>
+                                                {/* =====================================================
+                                                    ID
+                                                ===================================================== */}
+
+                                                <td>
+
+                                                    {
+                                                        item.maintenance_id
+                                                    }
+
+                                                </td>
 
 
-                                            {/* =====================================================
-                                                EQUIPMENT
-                                            ===================================================== */}
+                                                {/* =====================================================
+                                                    EQUIPMENT
+                                                ===================================================== */}
 
-                                            <td>
+                                                <td>
 
-                                                <div className="history-equipment">
+                                                    <div className="history-equipment">
 
-                                                    <div className="history-equipment-icon">
+                                                        <div className="history-equipment-icon">
 
-                                                        <Wrench
-                                                            size={15}
-                                                        />
+                                                            <Wrench
+                                                                size={15}
+                                                            />
+
+                                                        </div>
+
+
+                                                        <span>
+
+                                                            {
+                                                                item.equipment_name ||
+                                                                `Equipment #${item.equipment_id}`
+                                                            }
+
+                                                        </span>
 
                                                     </div>
 
+                                                </td>
 
-                                                    <span>
+
+                                                {/* =====================================================
+                                                    ENGINEER
+                                                ===================================================== */}
+
+                                                <td>
+
+                                                    {
+                                                        item.engineer_name ||
+                                                        item.engineer_id ||
+                                                        "-"
+                                                    }
+
+                                                </td>
+
+
+                                                {/* =====================================================
+                                                    DESCRIPTION
+                                                ===================================================== */}
+
+                                                <td>
+
+                                                    {
+                                                        item.description ||
+                                                        "-"
+                                                    }
+
+                                                </td>
+
+
+                                                {/* =====================================================
+                                                    PRIORITY
+                                                ===================================================== */}
+
+                                                <td>
+
+                                                    {
+                                                        item.priority ||
+                                                        "-"
+                                                    }
+
+                                                </td>
+
+
+                                                {/* =====================================================
+                                                    STATUS
+                                                ===================================================== */}
+
+                                                <td>
+
+                                                    <span
+                                                        className={`history-status ${getStatusClass(
+                                                            item.status
+                                                        )}`}
+                                                    >
 
                                                         {
-                                                            item.equipment_name ||
-                                                            `Equipment #${item.equipment_id}`
+                                                            getStatusIcon(
+                                                                item.status
+                                                            )
+                                                        }
+
+
+                                                        {
+                                                            item.status ||
+                                                            "-"
                                                         }
 
                                                     </span>
 
-                                                </div>
-
-                                            </td>
+                                                </td>
 
 
-                                            {/* =====================================================
-                                                ENGINEER
-                                            ===================================================== */}
+                                                {/* =====================================================
+                                                    DATE
+                                                ===================================================== */}
 
-                                            <td>
-
-                                                {
-                                                    item.engineer_name ||
-                                                    item.engineer_id ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-
-                                            {/* =====================================================
-                                                DESCRIPTION
-                                            ===================================================== */}
-
-                                            <td>
-
-                                                {
-                                                    item.description ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-
-                                            {/* =====================================================
-                                                PRIORITY
-                                            ===================================================== */}
-
-                                            <td>
-
-                                                {
-                                                    item.priority ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-
-                                            {/* =====================================================
-                                                STATUS
-                                            ===================================================== */}
-
-                                            <td>
-
-                                                <span
-                                                    className={`history-status ${getStatusClass(
-                                                        item.status
-                                                    )}`}
-                                                >
+                                                <td>
 
                                                     {
-                                                        getStatusIcon(
-                                                            item.status
+                                                        formatDate(
+                                                            item.created_at
                                                         )
                                                     }
 
+                                                </td>
 
-                                                    {
-                                                        item.status ||
-                                                        "-"
-                                                    }
+                                            </tr>
 
-                                                </span>
+                                        )
+                                    )}
 
-                                            </td>
+                                </tbody>
+
+                            </table>
+
+                        </div>
 
 
-                                            {/* =====================================================
-                                                DATE
-                                            ===================================================== */}
+                        {/* =====================================================
+                            PAGINATION
+                        ===================================================== */}
 
-                                            <td>
+                        {totalItems > 0 && (
 
-                                                {
-                                                    formatDate(
-                                                        item.created_at
-                                                    )
-                                                }
+                            <div className="history-pagination">
 
-                                            </td>
+                                {/* PAGINATION INFO */}
 
-                                        </tr>
+                                <div className="history-pagination-info">
 
-                                    )
-                                )}
+                                    Halaman{" "}
 
-                            </tbody>
+                                    <strong>
+                                        {currentPage}
+                                    </strong>
 
-                        </table>
+                                    {" dari "}
 
-                    </div>
+                                    <strong>
+                                        {totalPages}
+                                    </strong>
+
+                                </div>
+
+
+                                {/* PAGINATION BUTTON */}
+
+                                <div className="history-pagination-controls">
+
+
+                                    {/* PREVIOUS */}
+
+                                    <button
+                                        type="button"
+                                        className="history-pagination-btn"
+                                        disabled={
+                                            currentPage ===
+                                            1
+                                        }
+                                        onClick={
+                                            handlePreviousPage
+                                        }
+                                    >
+
+                                        <ChevronLeft
+                                            size={16}
+                                        />
+
+                                        Previous
+
+                                    </button>
+
+
+                                    {/* PAGE NUMBERS */}
+
+                                    <div className="history-page-numbers">
+
+                                        {Array.from(
+                                            {
+                                                length:
+                                                    totalPages
+                                            },
+                                            (_, index) => {
+
+                                                const page =
+                                                    index + 1;
+
+
+                                                return (
+
+                                                    <button
+                                                        key={
+                                                            page
+                                                        }
+                                                        type="button"
+                                                        className={`history-page-number ${
+                                                            currentPage ===
+                                                            page
+                                                                ? "active"
+                                                                : ""
+                                                        }`}
+                                                        onClick={() =>
+                                                            handlePageChange(
+                                                                page
+                                                            )
+                                                        }
+                                                    >
+
+                                                        {page}
+
+                                                    </button>
+
+                                                );
+
+                                            }
+                                        )}
+
+                                    </div>
+
+
+                                    {/* NEXT */}
+
+                                    <button
+                                        type="button"
+                                        className="history-pagination-btn"
+                                        disabled={
+                                            currentPage ===
+                                            totalPages
+                                        }
+                                        onClick={
+                                            handleNextPage
+                                        }
+                                    >
+
+                                        Next
+
+                                        <ChevronRight
+                                            size={16}
+                                        />
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+                    </>
 
                 )}
 
