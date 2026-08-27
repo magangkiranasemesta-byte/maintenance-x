@@ -243,7 +243,7 @@ function AuditTrail() {
 
                 log.user_id,
 
-                log.username,
+                log.user_name,
 
                 log.module,
 
@@ -251,9 +251,7 @@ function AuditTrail() {
 
                 log.action,
 
-                log.description,
-
-                log.ip_address
+                log.description
 
             ]
                 .filter(
@@ -300,10 +298,7 @@ function AuditTrail() {
                     valueB =
                         new Date(valueB).getTime();
 
-                }
-
-
-                else {
+                } else {
 
                     valueA =
                         String(
@@ -595,9 +590,11 @@ function AuditTrail() {
                 >
 
                     Menampilkan{" "}
+
                     <strong>
                         {sortedLogs.length}
                     </strong>{" "}
+
                     audit log
 
                 </div>
@@ -622,12 +619,14 @@ function AuditTrail() {
                                     />
                                 </th>
 
+
                                 <th>
                                     <SortButton
                                         label="User"
-                                        column="username"
+                                        column="user_name"
                                     />
                                 </th>
+
 
                                 <th>
                                     <SortButton
@@ -636,12 +635,14 @@ function AuditTrail() {
                                     />
                                 </th>
 
+
                                 <th>
                                     <SortButton
                                         label="Record ID"
                                         column="record_id"
                                     />
                                 </th>
+
 
                                 <th>
                                     <SortButton
@@ -650,21 +651,21 @@ function AuditTrail() {
                                     />
                                 </th>
 
+
                                 <th>
                                     Description
                                 </th>
+
 
                                 <th>
                                     Old Data
                                 </th>
 
+
                                 <th>
                                     New Data
                                 </th>
 
-                                <th>
-                                    IP Address
-                                </th>
 
                                 <th>
                                     <SortButton
@@ -685,7 +686,7 @@ function AuditTrail() {
                                 <tr>
 
                                     <td
-                                        colSpan="10"
+                                        colSpan="9"
                                         style={{
                                             textAlign: "center",
                                             padding: "40px"
@@ -701,7 +702,7 @@ function AuditTrail() {
                                 <tr>
 
                                     <td
-                                        colSpan="10"
+                                        colSpan="9"
                                         style={{
                                             textAlign: "center",
                                             padding: "40px",
@@ -709,7 +710,6 @@ function AuditTrail() {
                                         }}
                                     >
                                         Tidak ada audit log.
-
                                     </td>
 
                                 </tr>
@@ -731,7 +731,7 @@ function AuditTrail() {
 
 
                                             <td>
-                                                {log.username ||
+                                                {log.user_name ||
                                                     log.user_id ||
                                                     "-"
                                                 }
@@ -811,13 +811,6 @@ function AuditTrail() {
                                                     )}
                                                 </pre>
 
-                                            </td>
-
-
-                                            <td>
-                                                {log.ip_address ||
-                                                    "-"
-                                                }
                                             </td>
 
 

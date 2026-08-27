@@ -18,7 +18,6 @@ exports.getAuditLogs = (req, res) => {
             al.old_data,
             al.new_data,
             al.description,
-            al.ip_address,
             al.created_at
         FROM audit_logs al
         LEFT JOIN users u

@@ -15,7 +15,6 @@ exports.getActivityLogs = (req, res) => {
             al.action,
             al.module,
             al.description,
-            al.ip_address,
             al.created_at
         FROM activity_logs al
         LEFT JOIN users u
