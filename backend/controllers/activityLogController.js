@@ -11,7 +11,7 @@ exports.getActivityLogs = (req, res) => {
         SELECT
             al.id,
             al.user_id,
-            COALESCE(u.name, u.username, 'System') AS user_name,
+            COALESCE(u.username, 'System') AS user_name,
             al.action,
             al.module,
             al.description,

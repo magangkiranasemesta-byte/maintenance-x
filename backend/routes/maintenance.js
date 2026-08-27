@@ -47,7 +47,6 @@ router.get("/", (req, res) => {
                     err
                 );
 
-
                 return res.status(500).json({
 
                     success: false,
@@ -62,60 +61,6 @@ router.get("/", (req, res) => {
 
             }
 
-            logActivity({
-
-                req,
-
-                userId: engineer_id,
-
-                action: "CREATE",
-
-                module: "Maintenance",
-
-                description:
-                    `Maintenance #${result.insertId} dibuat dengan status PENDING_SUPERVISOR`
-
-            });
-
-             // ==================================================
-        // AUDIT LOG
-        // ==================================================
-
-        logAudit({
-
-            req,
-
-            userId: engineer_id,
-
-            module: "Maintenance",
-
-            recordId: result.insertId,
-
-            action: "CREATE",
-
-            oldData: null,
-
-            newData: {
-
-                status:
-                    "PENDING_SUPERVISOR",
-
-                equipment_id,
-
-                engineer_id,
-
-                description,
-
-                priority:
-                    priority || "MEDIUM"
-
-            },
-
-            description:
-                `Maintenance #${result.insertId} dibuat`
-
-        });
-
             return res.json(results);
 
         }
@@ -128,8 +73,9 @@ router.get("/", (req, res) => {
 // CREATE MAINTENANCE REQUEST
 //
 // ENGINEER
-//    ↓
+//      ↓
 // PENDING_SUPERVISOR
+//
 // ======================================================
 
 router.post("/", (req, res) => {
@@ -163,63 +109,17 @@ router.post("/", (req, res) => {
 
     }
 
-    // ======================================================
-// GET MAINTENANCE HISTORY
-// ======================================================
 
-router.get("/history", (req, res) => {
+    // ==================================================
+    // NORMALIZE PRIORITY
+    // ==================================================
 
-    const sql = `
-        SELECT
-            mr.id AS maintenance_id,
-            mr.equipment_id,
-            mr.engineer_id,
-            mr.description,
-            mr.priority,
-            mr.status,
-            mr.created_at,
-
-            e.name AS equipment_name,
-
-            u.username AS engineer_name
-
-        FROM maintenance_requests mr
-
-        LEFT JOIN equipment e
-            ON mr.equipment_id = e.id
-
-        LEFT JOIN users u
-            ON mr.engineer_id = u.id
-
-        WHERE mr.status IN (
-            'REJECTED',
-            'APPROVED',
-            'IN_PROGRESS',
-            'COMPLETED'
+    const maintenancePriority =
+        String(
+            priority || "MEDIUM"
         )
-
-        ORDER BY mr.created_at DESC
-    `;
-
-    db.query(sql, (error, results) => {
-
-        if (error) {
-
-            console.error(
-                "GET MAINTENANCE HISTORY ERROR:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Gagal mengambil maintenance history",
-                error: error.message
-            });
-        }
-
-        return res.json(results);
-    });
-});
+            .trim()
+            .toUpperCase();
 
 
     // ==================================================
@@ -247,7 +147,7 @@ router.get("/history", (req, res) => {
 
         description,
 
-        priority || "MEDIUM",
+        maintenancePriority,
 
         "PENDING_SUPERVISOR"
 
@@ -281,6 +181,111 @@ router.get("/history", (req, res) => {
             }
 
 
+            // ==================================================
+            // MAINTENANCE ID
+            // ==================================================
+
+            const maintenanceId =
+                result.insertId;
+
+
+            // ==================================================
+            // ACTIVITY LOG
+            // ==================================================
+
+            try {
+
+                logActivity({
+
+                    req,
+
+                    userId:
+                        engineer_id,
+
+                    action:
+                        "CREATE",
+
+                    module:
+                        "Maintenance",
+
+                    description:
+                        `Maintenance #${maintenanceId} dibuat dengan status PENDING_SUPERVISOR`
+
+                });
+
+            } catch (logError) {
+
+                console.error(
+                    "CREATE ACTIVITY LOG ERROR:",
+                    logError
+                );
+
+            }
+
+
+            // ==================================================
+            // AUDIT LOG
+            // ==================================================
+
+            try {
+
+                logAudit({
+
+                    req,
+
+                    userId:
+                        engineer_id,
+
+                    module:
+                        "Maintenance",
+
+                    recordId:
+                        maintenanceId,
+
+                    action:
+                        "CREATE",
+
+                    oldData:
+                        null,
+
+                    newData: {
+
+                        status:
+                            "PENDING_SUPERVISOR",
+
+                        equipment_id:
+                            equipment_id,
+
+                        engineer_id:
+                            engineer_id,
+
+                        description:
+                            description,
+
+                        priority:
+                            maintenancePriority
+
+                    },
+
+                    description:
+                        `Maintenance #${maintenanceId} dibuat`
+
+                });
+
+            } catch (auditError) {
+
+                console.error(
+                    "CREATE AUDIT LOG ERROR:",
+                    auditError
+                );
+
+            }
+
+
+            // ==================================================
+            // RESPONSE
+            // ==================================================
+
             return res.status(201).json({
 
                 success: true,
@@ -289,7 +294,7 @@ router.get("/history", (req, res) => {
                     "Maintenance request berhasil dibuat",
 
                 id:
-                    result.insertId,
+                    maintenanceId,
 
                 status:
                     "PENDING_SUPERVISOR"
@@ -303,8 +308,94 @@ router.get("/history", (req, res) => {
 
 
 // ======================================================
+// GET MAINTENANCE HISTORY
+// ======================================================
+
+router.get("/history", (req, res) => {
+
+    const sql = `
+        SELECT
+
+            mr.id AS maintenance_id,
+
+            mr.equipment_id,
+
+            mr.engineer_id,
+
+            mr.description,
+
+            mr.priority,
+
+            mr.status,
+
+            mr.created_at,
+
+            e.name AS equipment_name,
+
+            u.username AS engineer_name
+
+        FROM maintenance_requests mr
+
+        LEFT JOIN equipment e
+            ON mr.equipment_id = e.id
+
+        LEFT JOIN users u
+            ON mr.engineer_id = u.id
+
+        WHERE mr.status IN (
+
+            'REJECTED',
+
+            'APPROVED',
+
+            'IN_PROGRESS',
+
+            'COMPLETED'
+
+        )
+
+        ORDER BY mr.created_at DESC
+    `;
+
+
+    db.query(
+        sql,
+        (error, results) => {
+
+            if (error) {
+
+                console.error(
+                    "GET MAINTENANCE HISTORY ERROR:",
+                    error
+                );
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    message:
+                        "Gagal mengambil maintenance history",
+
+                    error:
+                        error.message
+
+                });
+
+            }
+
+            return res.json(results);
+
+        }
+    );
+
+});
+
+
+// ======================================================
 // UPDATE STATUS
 // ======================================================
+//
+// FLOW:
 //
 // PENDING_SUPERVISOR
 //        ↓
@@ -350,13 +441,18 @@ router.put("/:id/status", (req, res) => {
             .toUpperCase();
 
 
+    // ==================================================
+    // LOG REQUEST
+    // ==================================================
+
     console.log("");
+
     console.log(
         "========================================"
     );
 
     console.log(
-        "APPROVAL REQUEST"
+        "APPROVAL / STATUS REQUEST"
     );
 
     console.log(
@@ -386,11 +482,11 @@ router.put("/:id/status", (req, res) => {
     // ==================================================
     // COMPATIBILITY STATUS
     //
-    // Kalau frontend lama masih mengirim:
+    // FRONTEND LAMA:
     //
     // WAITING_MANAGER_APPROVAL
     //
-    // backend otomatis mengubahnya menjadi:
+    // DIUBAH MENJADI:
     //
     // PENDING_MANAGER
     //
@@ -492,14 +588,36 @@ router.put("/:id/status", (req, res) => {
 
 
     // ==================================================
-    // AMBIL STATUS SEKARANG
+    // AMBIL DATA MAINTENANCE
+    //
+    // PENTING:
+    //
+    // engineer_id diambil dari database.
+    //
+    // Ini yang mencegah error:
+    //
+    // ReferenceError:
+    // engineer_id is not defined
+    //
     // ==================================================
 
     const selectSql = `
         SELECT
+
             id,
+
+            equipment_id,
+
+            engineer_id,
+
+            description,
+
+            priority,
+
             status
+
         FROM maintenance_requests
+
         WHERE id = ?
     `;
 
@@ -512,7 +630,7 @@ router.put("/:id/status", (req, res) => {
             if (selectError) {
 
                 console.error(
-                    "SELECT STATUS ERROR:",
+                    "SELECT MAINTENANCE ERROR:",
                     selectError
                 );
 
@@ -521,7 +639,7 @@ router.put("/:id/status", (req, res) => {
                     success: false,
 
                     message:
-                        "Gagal membaca status maintenance",
+                        "Gagal membaca data maintenance",
 
                     error:
                         selectError.message
@@ -553,20 +671,44 @@ router.put("/:id/status", (req, res) => {
 
 
             // ==================================================
+            // DATA LAMA
+            // ==================================================
+
+            const maintenance =
+                rows[0];
+
+
+            // ==================================================
             // STATUS SEKARANG
             // ==================================================
 
             const currentStatus =
                 String(
-                    rows[0].status || ""
+                    maintenance.status || ""
                 )
                     .trim()
                     .toUpperCase();
 
 
+            // ==================================================
+            // ENGINEER ID
+            //
+            // USER YANG TERKAIT DENGAN MAINTENANCE
+            //
+            // ==================================================
+
+            const engineerId =
+                maintenance.engineer_id;
+
+
             console.log(
                 "Status sekarang :",
                 currentStatus
+            );
+
+            console.log(
+                "Engineer ID     :",
+                engineerId
             );
 
 
@@ -637,13 +779,10 @@ router.put("/:id/status", (req, res) => {
             // ==================================================
             // REJECT
             //
-            // PENDING_SUPERVISOR
-            //        ↓
-            // REJECTED
+            // PENDING_SUPERVISOR → REJECTED
             //
-            // PENDING_MANAGER
-            //        ↓
-            // REJECTED
+            // PENDING_MANAGER → REJECTED
+            //
             // ==================================================
 
             if (
@@ -734,7 +873,9 @@ router.put("/:id/status", (req, res) => {
 
             const updateSql = `
                 UPDATE maintenance_requests
+
                 SET status = ?
+
                 WHERE id = ?
             `;
 
@@ -750,6 +891,7 @@ router.put("/:id/status", (req, res) => {
                     if (updateError) {
 
                         console.error("");
+
                         console.error(
                             "========================================"
                         );
@@ -816,136 +958,234 @@ router.put("/:id/status", (req, res) => {
 
                         });
 
-                        // ======================================================
-// ACTIVITY LOG
-// ======================================================
-
-let activityAction = "STATUS_CHANGE";
+                    }
 
 
-// Supervisor approve
+                    // ==================================================
+                    // TENTUKAN ACTION
+                    // ==================================================
 
-if (
-    currentStatus === "PENDING_SUPERVISOR" &&
-    status === "PENDING_MANAGER"
-) {
-
-    activityAction = "APPROVE";
-
-}
+                    let activityAction =
+                        "STATUS_CHANGE";
 
 
-// Manager approve
+                    // ==================================================
+                    // SUPERVISOR APPROVE
+                    // ==================================================
 
-else if (
-    currentStatus === "PENDING_MANAGER" &&
-    status === "APPROVED"
-) {
+                    if (
+                        currentStatus ===
+                            "PENDING_SUPERVISOR" &&
+                        status ===
+                            "PENDING_MANAGER"
+                    ) {
 
-    activityAction = "APPROVE";
-
-}
-
-
-// Reject
-
-else if (
-    status === "REJECTED"
-) {
-
-    activityAction = "REJECT";
-
-}
-
-
-// Start maintenance
-
-else if (
-    status === "IN_PROGRESS"
-) {
-
-    activityAction = "START";
-
-}
-
-
-// Complete maintenance
-
-else if (
-    status === "COMPLETED"
-) {
-
-    activityAction = "COMPLETE";
-
-}
-
-
-logActivity({
-
-    req,
-
-    action:
-        activityAction,
-
-    module:
-        "Maintenance",
-
-    description:
-        `Maintenance #${id}: ${currentStatus} → ${status}`
-
-});
-
-
-// ======================================================
-// AUDIT LOG
-// ======================================================
-
-logAudit({
-
-    req,
-
-    module:
-        "Maintenance",
-
-    recordId:
-        Number(id),
-
-    action:
-        "STATUS_CHANGE",
-
-    oldData: {
-
-        status:
-            currentStatus
-
-    },
-
-    newData: {
-
-        status:
-            status
-
-    },
-
-    description:
-        `Status maintenance #${id} berubah dari ${currentStatus} menjadi ${status}`
-
-});
+                        activityAction =
+                            "APPROVE";
 
                     }
 
 
                     // ==================================================
-                    // BERHASIL
+                    // MANAGER APPROVE
+                    // ==================================================
+
+                    else if (
+                        currentStatus ===
+                            "PENDING_MANAGER" &&
+                        status ===
+                            "APPROVED"
+                    ) {
+
+                        activityAction =
+                            "APPROVE";
+
+                    }
+
+
+                    // ==================================================
+                    // REJECT
+                    // ==================================================
+
+                    else if (
+                        status ===
+                        "REJECTED"
+                    ) {
+
+                        activityAction =
+                            "REJECT";
+
+                    }
+
+
+                    // ==================================================
+                    // START
+                    // ==================================================
+
+                    else if (
+                        status ===
+                        "IN_PROGRESS"
+                    ) {
+
+                        activityAction =
+                            "START";
+
+                    }
+
+
+                    // ==================================================
+                    // COMPLETE
+                    // ==================================================
+
+                    else if (
+                        status ===
+                        "COMPLETED"
+                    ) {
+
+                        activityAction =
+                            "COMPLETE";
+
+                    }
+
+
+                    // ==================================================
+                    // ACTIVITY LOG
+                    // ==================================================
+
+                    try {
+
+                        logActivity({
+
+                            req,
+
+                            userId:
+                                engineerId,
+
+                            action:
+                                activityAction,
+
+                            module:
+                                "Maintenance",
+
+                            description:
+                                `Maintenance #${id}: ${currentStatus} → ${status}`
+
+                        });
+
+                    } catch (logError) {
+
+                        console.error(
+                            "STATUS ACTIVITY LOG ERROR:",
+                            logError
+                        );
+
+                    }
+
+
+                    // ==================================================
+                    // AUDIT LOG
+                    // ==================================================
+
+                    try {
+
+                        logAudit({
+
+                            req,
+
+                            userId:
+                                engineerId,
+
+                            module:
+                                "Maintenance",
+
+                            recordId:
+                                Number(id),
+
+                            action:
+                                activityAction,
+
+                            oldData: {
+
+                                status:
+                                    currentStatus
+
+                            },
+
+                            newData: {
+
+                                status:
+                                    status
+
+                            },
+
+                            description:
+                                `Status maintenance #${id} berubah dari ${currentStatus} menjadi ${status}`
+
+                        });
+
+                    } catch (auditError) {
+
+                        console.error(
+                            "STATUS AUDIT LOG ERROR:",
+                            auditError
+                        );
+
+                    }
+
+
+                    // ==================================================
+                    // LOG SUCCESS
                     // ==================================================
 
                     console.log("");
 
                     console.log(
-                        `Maintenance #${id}: ${currentStatus} → ${status}`
+                        "========================================"
+                    );
+
+                    console.log(
+                        "MAINTENANCE STATUS BERHASIL DIUBAH"
+                    );
+
+                    console.log(
+                        "========================================"
+                    );
+
+                    console.log(
+                        "Maintenance ID :",
+                        id
+                    );
+
+                    console.log(
+                        "Engineer ID    :",
+                        engineerId
+                    );
+
+                    console.log(
+                        "Action         :",
+                        activityAction
+                    );
+
+                    console.log(
+                        "Previous       :",
+                        currentStatus
+                    );
+
+                    console.log(
+                        "Current        :",
+                        status
+                    );
+
+                    console.log(
+                        "========================================"
                     );
 
                     console.log("");
+
+
+                    // ==================================================
+                    // RESPONSE
+                    // ==================================================
 
                     return res.json({
 
@@ -971,52 +1211,6 @@ logAudit({
         }
     );
 
-});
-
-router.get("/history", (req, res) => {
-
-    const sql = `
-        SELECT
-            mr.id AS maintenance_id,
-            mr.equipment_id,
-            mr.engineer_id,
-            mr.description,
-            mr.priority,
-            mr.status,
-            mr.created_at,
-            e.name AS equipment_name,
-            u.username AS engineer_name
-        FROM maintenance_requests mr
-        LEFT JOIN equipment e
-            ON mr.equipment_id = e.id
-        LEFT JOIN users u
-            ON mr.engineer_id = u.id
-        WHERE mr.status IN (
-            'REJECTED',
-            'APPROVED',
-            'IN_PROGRESS',
-            'COMPLETED'
-        )
-        ORDER BY mr.created_at DESC
-    `;
-
-    db.query(sql, (error, results) => {
-
-        if (error) {
-            console.error(
-                "HISTORY ERROR:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Gagal mengambil history",
-                error: error.message
-            });
-        }
-
-        res.json(results);
-    });
 });
 
 

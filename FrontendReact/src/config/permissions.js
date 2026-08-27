@@ -27,7 +27,7 @@ export const rolePermissions = {
         approval: true,
         history: true,
         activityLog: true,
-        auditTrail: true
+        auditTrail: false
     },
 
     manager: {
@@ -37,7 +37,7 @@ export const rolePermissions = {
         approval: true,
         history: true,
         activityLog: true,
-        auditTrail: true
+        auditTrail: false
     }
 
 };
